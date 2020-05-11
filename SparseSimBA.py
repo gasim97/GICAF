@@ -1,4 +1,4 @@
-from Interfaces.AttackInterface import AttackInterface
+from GICAF.Interfaces.AttackInterface import AttackInterface
 from sys import setrecursionlimit
 from numpy import clip, argwhere, zeros
 from numpy.linalg import norm

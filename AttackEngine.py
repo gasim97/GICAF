@@ -1,4 +1,4 @@
-from Interfaces.AttackEngineInterface import AttackEngineInterface
+from GICAF.Interfaces.AttackEngineInterface import AttackEngineInterface
 from Logger import Logger
 
 class AttackEngine(AttackEngineInterface):
