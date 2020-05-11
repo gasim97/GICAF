@@ -1,5 +1,5 @@
-from GICAF.Interfaces.AttackInterface import AttackInterface
-import GICAF.Stats as stats
+from gicaf.interfaces.AttackInterface import AttackInterface
+import gicaf.Stats as stats
 from sys import setrecursionlimit
 from numpy import clip, argwhere, zeros
 from numpy.linalg import norm

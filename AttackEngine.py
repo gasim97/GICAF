@@ -1,5 +1,5 @@
-from GICAF.Interfaces.AttackEngineInterface import AttackEngineInterface
-from GICAF.Logger import Logger
+from gicaf.interfaces.AttackEngineInterface import AttackEngineInterface
+from gicaf.Logger import Logger
 
 class AttackEngine(AttackEngineInterface):
 
