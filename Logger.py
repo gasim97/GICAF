@@ -1,4 +1,4 @@
-from gicaf.interfaces.LoggerInterface import LoggerInterface
+from gicaf.interface.LoggerInterface import LoggerInterface
 
 from logging import info
 from pandas import DataFrame

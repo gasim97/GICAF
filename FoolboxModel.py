@@ -1,4 +1,4 @@
-from gicaf.interfaces.ModelInterface import FoolboxKerasModelInterface
+from gicaf.interface.ModelInterface import FoolboxKerasModelInterface
 import keras
 from numpy import array
 
