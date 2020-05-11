@@ -1,10 +1,10 @@
-from skimage.measure import compare_ssim, compare_psnr
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 def psnr(image, adversarial_image, data_range=255):
-    return compare_psnr(image, adversarial_image, data_range=data_range)
+    return peak_signal_noise_ratio(image, adversarial_image, data_range=data_range)
 
 def ssim(image, adversarial_image, multichannel=True):
-    return compare_ssim(image, adversarial_image, multichannel=multichannel)
+    return structural_similarity(image, adversarial_image, multichannel=multichannel)
 
 def visq(image, adversarial_image):
     pass
