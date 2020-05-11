@@ -1,4 +1,4 @@
-from Interfaces.LoadDataInterface import LoadDataInterface
+from GICAF.Interfaces.LoadDataInterface import LoadDataInterface
 from numpy import array, arange, asarray
 from cv2 import cvtColor, COLOR_RGB2BGR
 from logging import info
