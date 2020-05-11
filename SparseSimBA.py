@@ -1,4 +1,5 @@
 from GICAF.Interfaces.AttackInterface import AttackInterface
+import GICAF.Stats
 from sys import setrecursionlimit
 from numpy import clip, argwhere, zeros
 from numpy.linalg import norm
@@ -6,7 +7,6 @@ from numpy.random import randint
 from skimage.measure import compare_ssim, compare_psnr
 from pandas import DataFrame
 import time
-import Stats
 
 from logging import info
 
