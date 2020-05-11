@@ -1,5 +1,5 @@
 from GICAF.Interfaces.AttackInterface import AttackInterface
-import GICAF.Stats
+import GICAF.Stats as stats
 from sys import setrecursionlimit
 from numpy import clip, argwhere, zeros
 from numpy.linalg import norm
@@ -45,8 +45,8 @@ class SparseSimBA(AttackInterface):
         
         #save step 0 in df
         adv = clip(image + delta, 0, 255)
-        ssim = Stats.ssim(image, adv, multichannel=True)
-        psnr = Stats.psnr(image, adv, data_range=255)
+        ssim = stats.ssim(image, adv, multichannel=True)
+        psnr = stats.psnr(image, adv, data_range=255)
         self.logger.append({
             "iterations": iteration,
             "total calls": total_calls,
@@ -76,8 +76,8 @@ class SparseSimBA(AttackInterface):
 
             #update data on df
             adv = clip(image + delta, 0, 255)
-            ssim = Stats.ssim(image, adv, multichannel=True)
-            psnr = Stats.psnr(image, adv, data_range=255)
+            ssim = stats.ssim(image, adv, multichannel=True)
+            psnr = stats.psnr(image, adv, data_range=255)
 
             if iteration % 100 == 0: #only save image and probs every 100 steps, to save memory space
                 image_save = adv
