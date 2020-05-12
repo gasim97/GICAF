@@ -57,7 +57,7 @@ class ModelInterface:
 class FoolboxKerasModelInterface(ModelInterface):
 
     # initialize
-    def __init__(self, kmodel, preprocessing): 
+    def __init__(self, kmodel, preprocessing=(0, 1)): 
         #sets up local model, to use for local testing
         self.model = KerasModel(kmodel, bounds=(0, 255), preprocessing=preprocessing, predicts='logits')
 

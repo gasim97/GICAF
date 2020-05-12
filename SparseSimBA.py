@@ -7,7 +7,6 @@ from numpy.random import randint
 from skimage.measure import compare_ssim, compare_psnr
 from pandas import DataFrame
 import time
-
 from logging import info
 
 class SparseSimBA(AttackInterface):

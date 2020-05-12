@@ -1,7 +1,6 @@
 from gicaf.interface.LoggerInterface import LoggerInterface
-
-from logging import info
 from pandas import DataFrame
+from logging import info
 
 class Logger(LoggerInterface):
 
