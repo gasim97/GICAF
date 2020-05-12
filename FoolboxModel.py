@@ -9,7 +9,7 @@ class ResNet50(FoolboxKerasModelInterface):
         # sets up local ResNet50 model, to use for local testing
         keras.backend.set_learning_phase(0)
         super(ResNet50, self).__init__(kmodel=keras.applications.resnet50.ResNet50(weights='imagenet'),
-                                        preprocessing=(array([104, 116, 123]), 1))
+                                        preprocessing=(0, 1))
     
     # get model metadata
     def metadata(self): 
