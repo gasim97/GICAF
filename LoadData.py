@@ -38,12 +38,12 @@ class LoadData(LoadDataInterface):
     def load_images(self, index_ranges, height, width, bgr=False):
         info("\n\nLoading images (directory path = '" + self.test_set_file_path + "')...")
         meta_data = self.read_txt_file(index_ranges) # get image file names and ground truths
-        x = asarray(list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(height, width), color_mode='rgb')), meta_data))) # load images for file names in meta_data
+        x = list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(height, width), color_mode='rgb')), meta_data)) # load images for file names in meta_data
         if (bgr):
             x = list(map(lambda x: cvtColor(x, COLOR_RGB2BGR), x))
-        y = asarray(list(map(lambda x: x[1], meta_data))) # unpack ground truths from meta_data
+        y = list(map(lambda x: x[1], meta_data)) # unpack ground truths from meta_data
         info("Images successfully loaded.")
-        return x, y
+        return asarray(x), asarray(y)
 
     # get images and ground truths
     def get_data(self, index_ranges, height, width): 
