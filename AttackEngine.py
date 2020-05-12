@@ -15,7 +15,7 @@ class AttackEngine(AttackEngineInterface):
         self._filter_wrong_predictions()
 
     def _filter_wrong_predictions(self):
-        preds = model.get_top_1_batch(self.x)
+        preds = self.model.get_top_1_batch(self.x)
         correct_pred_indicies = list(map(lambda z: z[1], filter(lambda z: z[0] == True, map(lambda i: [preds[i][0] == self.y[i], i], range(len(self.y))))))
         info(str(len(correct_pred_indicies)) + " out of " + str(len(self.x)) + " samples correctly predicted and will be used for an attack")
         self.x = array(list(map(lambda i: self.x[i], correct_pred_indicies)))
