@@ -116,8 +116,8 @@ class TfLiteModel(ModelInterface):
         self.interpreter.invoke()
         # Post-processing: remove batch dimension and find the digit with highest
         # probability.
-        output = deepcopy(self.interpreter.tensor(self.output_index))
-        return output()[0]
+        output = self.interpreter.tensor(self.output_index)
+        return deepcopy(output()[0])
 
     # run inference
     def get_preds(self, image):
