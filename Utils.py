@@ -10,11 +10,12 @@ def create_dummy_sample(dims=[None, 224, 224, 3]):
 def saved_model_to_tflite(saved_model_path, model_name, bit_width=8):
     info("Converting saved model to tfLite model")
     converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    if (bit_width != 32):
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
     if (bit_width == 16):
         converter.target_spec.supported_types = [tf.float16]
-    elif (bit_width != 8):
-        print("Got a bit_width of " + bit_width + ". Expected 8 or 16.")
+    elif (bit_width != 8 and bit_width != 32):
+        print("Got a bit_width of " + bit_width + ". Expected 8, 16 or 32.")
         raise ValueError
     tflite_model = converter.convert()
     info("Saving tfLite model")
