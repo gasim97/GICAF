@@ -42,5 +42,5 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
     model.predict(create_dummy_sample(input_dims))
     model.compile()
     tfhub_models_dir = save_tfhub_model(model, model_name)
-    tflite_model_file = saved_model_to_tflite(tfhub_models_dir, model_name, bit_width=8)
+    tflite_model_file = saved_model_to_tflite(tfhub_models_dir, model_name, bit_width)
     return tflite_model_file
