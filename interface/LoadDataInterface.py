@@ -10,8 +10,7 @@ class LoadDataInterface:
     # initialize paths
     @abstractmethod
     def __init__(self, ground_truth_file_path, img_folder_path): 
-        print("Loading module __init__() function missing") 
-        raise NotImplementedError
+        raise NotImplementedError("Loading module __init__() function missing")
 
     # get images and ground truths
     @abstractmethod
@@ -21,8 +20,7 @@ class LoadDataInterface:
         height: model input height
         width: model input width
         """
-        print("Loading module get_data() function missing") 
-        raise NotImplementedError
+        raise NotImplementedError("Loading module get_data() function missing")
     # returns [images], [ground truths]
 
     # get bgr images and ground truths
@@ -33,8 +31,7 @@ class LoadDataInterface:
         height: model input height
         width: model input width
         """
-        print("Loading module get_data_bgr() function missing") 
-        raise NotImplementedError
+        raise NotImplementedError("Loading module get_data_bgr() function missing")
     # returns [images], [ground truths]
 
     # # loads images (jpg files) and ground truths (txt file)
@@ -64,5 +61,4 @@ class LoadDataInterface:
     # end of session clean up
     @abstractmethod
     def close(self): 
-        print("Loading module close() function missing") 
-        raise NotImplementedError
+        raise NotImplementedError("Loading module close() function missing")

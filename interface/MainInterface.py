@@ -9,11 +9,9 @@ class MainInterface:
     # initialize
     @abstractmethod
     def __init__(self): 
-        print("Main module __init__() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Main module __init__() function missing")
 
     # end of session clean up
     @abstractmethod
     def close(self): 
-        print("Main module close() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Main module close() function missing")

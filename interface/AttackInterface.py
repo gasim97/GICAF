@@ -9,14 +9,12 @@ class AttackInterface:
     # initialize
     @abstractmethod
     def __init__(self): 
-        print("Attack module __init__() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Attack module __init__() function missing")
 
     # runs the attack
     @abstractmethod
     def run(self, images, model, logger, query_limit=5000): 
-        print("Attack module run() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Attack module run() function missing")
     # returns attack log
 
     # end of session clean up

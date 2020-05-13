@@ -9,14 +9,12 @@ class AttackEngineInterface:
     # initialize
     @abstractmethod
     def __init__(self, x, y, model, attacks): 
-        print("AttackEngine module __init__() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("AttackEngine module __init__() function missing")
 
     # runs the attack
     @abstractmethod
     def run(self): 
-        print("AttackEngine module run() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("AttackEngine module run() function missing")
     # returns adversarial image, attack log
 
     # end of session clean up

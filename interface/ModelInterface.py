@@ -13,42 +13,36 @@ class ModelInterface:
     # initialize
     @abstractmethod
     def __init__(self): 
-        print("Model module __init__() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Model module __init__() function missing")
 
     # get model metadata
     @abstractmethod
     def metadata(self): 
-        print("Model module get_model_meta() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Model module get_model_meta() function missing")
     # returns input height, input width, input channels, (True if BGR else False)
 
     # run inference and return top 1
     @abstractmethod
     def get_top_1(self, image): 
-        print("Model module get_top_1() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Model module get_top_1() function missing")
     # returns [label, probability] -> shape = (1, 2)
 
     # run inference on batch and return top 1
     @abstractmethod
     def get_top_1_batch(self, images): 
-        print("Model module get_top_1_batch() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Model module get_top_1_batch() function missing")
     # returns [[label, probability]] -> shape = (batch size, 2)
 
     # run inference and return top 5 ORDERED HIGHEST TO LOWEST
     @abstractmethod
     def get_top_5(self, image): 
-        print("Model module get_top_5() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Model module get_top_5() function missing")
     # returns [[label, probability]] -> shape = (5, 2)
 
     # run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
     @abstractmethod
     def get_top_5_batch(self, images): 
-        print("Model module get_top_5_batch() function missing")
-        raise NotImplementedError
+        raise NotImplementedError("Model module get_top_5_batch() function missing")
     # returns [[[label, probability]]] -> shape = (batch size, 5, 2)
 
     # end of session clean up
