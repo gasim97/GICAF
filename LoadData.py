@@ -17,7 +17,7 @@ class LoadData(LoadDataInterface):
         self.img_folder_path = img_folder_path
 
     def read_txt_file(self, index_ranges):
-        info("\n\nReading dataset text file (file path = '" + self.test_set_file_path + "')...")
+        info("Reading dataset text file (file path = '" + self.test_set_file_path + "')...")
         sorted_indicies = self.get_sorted_indicies_list(index_ranges)
         txt_file = open(self.test_set_file_path, "r")
 
@@ -36,7 +36,7 @@ class LoadData(LoadDataInterface):
         return data
 
     def load_images(self, index_ranges, height, width, bgr=False):
-        info("\n\nLoading images (directory path = '" + self.test_set_file_path + "')...")
+        info("Loading images (directory path = '" + self.test_set_file_path + "')...")
         meta_data = self.read_txt_file(index_ranges) # get image file names and ground truths
         x = list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(height, width), color_mode='rgb')), meta_data)) # load images for file names in meta_data
         if (bgr):
