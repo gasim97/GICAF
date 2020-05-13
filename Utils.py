@@ -18,10 +18,10 @@ def saved_model_to_tflite(saved_model_path, model_name, bit_width=8):
         print("Got a bit_width of " + bit_width + ". Expected 8, 16 or 32.")
         raise ValueError
     tflite_model = converter.convert()
-    info("Saving tfLite model")
     tflite_models_dir = Path("tmp/tflite_models/" + model_name + "/")
     tflite_models_dir.mkdir(exist_ok=True, parents=True)
-    tflite_model_file = tflite_models_dir/"model" + str(bit_width) + ".tflite"
+    tflite_model_file = tflite_models_dir/("model_" + str(bit_width) + ".tflite")
+    info("Saving tfLite model to " + str(tflite_model_file))
     tflite_model_file.write_bytes(tflite_model)
     return tflite_model_file
 
@@ -30,8 +30,8 @@ def get_tfhub_model(link):
     return tf.keras.Sequential([hub.KerasLayer(link)])
 
 def save_tfhub_model(model, model_name):
-    info("Saving tfHub model")
     tfhub_models_dir = Path("tmp/tfhub_models/" + model_name + "/")
+    info("Saving tfHub model to " + str(tfhub_models_dir))
     tfhub_models_dir.mkdir(exist_ok=True, parents=True)
     model.save(tfhub_models_dir, include_optimizer=False)
     return str(tfhub_models_dir)

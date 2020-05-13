@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from numpy import array, arange, flip, expand_dims, float32
 from foolbox.models import KerasModel
-from tensorflow.lite import Interpreter
+import tensorflow.lite as lite
+from copy import deepcopy
 
 class ModelInterface:
     __metaclass__ = ABCMeta
@@ -101,7 +102,7 @@ class TfLiteModel(ModelInterface):
     # initialize
     def __init__(self, tflite_model_file_path): 
         #sets up local model, to use for local testing
-        self.interpreter = Interpreter(model_path=str(tflite_model_file_path))
+        self.interpreter = lite.Interpreter(model_path=str(tflite_model_file_path))
         self.interpreter.allocate_tensors()
         self.input_index = self.interpreter.get_input_details()[0]["index"]
         self.output_index = self.interpreter.get_output_details()[0]["index"]
@@ -115,7 +116,7 @@ class TfLiteModel(ModelInterface):
         self.interpreter.invoke()
         # Post-processing: remove batch dimension and find the digit with highest
         # probability.
-        output = self.interpreter.tensor(self.output_index)
+        output = deepcopy(self.interpreter.tensor(self.output_index))
         return output()[0]
 
     # run inference
