@@ -17,11 +17,13 @@ class SparseSimBA(AttackInterface):
         self.epsilon = 64
 
     # runs the attack
-    def run(self, images, model, logger, query_limit=5000): 
+    def run(self, images, model, logger, query_limit=5000, dims=(224, 224, 3), bounds=(0.0, 1.0)): 
         self.model = model
         self.logger = logger
+        self.bounds = bounds
+        self.dims = dims
         for image in images:
-            self.run_sparse_simba(image)
+            self.run_sparse_simba(image, query_limit=query_limit)
         # print("Attack module run() function missing")
         # raise NotImplementedError
     # returns adversarial images, attack log
@@ -43,7 +45,7 @@ class SparseSimBA(AttackInterface):
         done = []
         
         #save step 0 in df
-        adv = clip(image + delta, 0, 255)
+        adv = clip(image + delta, self.bounds[0], self.bounds[1])
         ssim = stats.ssim(image, adv, multichannel=True)
         psnr = stats.psnr(image, adv, data_range=255)
         self.logger.append({
@@ -74,7 +76,7 @@ class SparseSimBA(AttackInterface):
                 total_calls += 1
 
             #update data on df
-            adv = clip(image + delta, 0, 255)
+            adv = clip(image + delta, self.bounds[0], self.bounds[1])
             ssim = stats.ssim(image, adv, multichannel=True)
             psnr = stats.psnr(image, adv, data_range=255)
 
@@ -119,7 +121,7 @@ class SparseSimBA(AttackInterface):
     def check_pos(self, x, delta, q, p, loss_label):
         success = False #initialise as False by default
         pos_x = x + delta + self.epsilon * q
-        pos_x = clip(pos_x, 0, 255)
+        pos_x = clip(pos_x, self.bounds[0], self.bounds[1])
         top_5_preds = self.model.get_top_5(pos_x)
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
@@ -137,7 +139,7 @@ class SparseSimBA(AttackInterface):
     def check_neg(self, x, delta, q, p, loss_label):
         success = False #initialise as False by default
         neg_x = x + delta - self.epsilon * q
-        neg_x = clip(neg_x, 0, 255)
+        neg_x = clip(neg_x, self.bounds[0], self.bounds[1])
         top_5_preds = self.model.get_top_5(neg_x)
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
@@ -159,9 +161,9 @@ class SparseSimBA(AttackInterface):
     def new_q_direction(self, done, size=1):
         [a,b,c] = self.sample_nums(done, size)
         done.append([a,b,c])
-        if len(done) >= 224*224*3/size/size-2:
+        if len(done) >= self.dims[0]*self.dims[1]*self.dims[2]/size/size-2:
             done = [] #empty it before it hits recursion limit
-        q = zeros((224,224,3))
+        q = zeros((self.dims[0],self.dims[1],self.dims[2]))
         for i in range(size):
             for j in range(size):
                 q[a*size+i, b*size+j, c] = 1
@@ -170,7 +172,7 @@ class SparseSimBA(AttackInterface):
 
     def sample_nums(self, done, size=1):
         #samples new pixels without replacement
-        [a,b] = randint(0, high=224/size, size=2)
+        [a,b] = randint(0, high=self.dims[1]/size, size=2)
         c = randint(0, high=3, size=1)[0]
         if [a,b,c] in done:
             #sample again (recursion)
