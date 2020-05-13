@@ -34,7 +34,7 @@ def save_tfhub_model(model, model_name):
     tfhub_models_dir = Path("tmp/tfhub_models/" + model_name + "/")
     tfhub_models_dir.mkdir(exist_ok=True, parents=True)
     model.save(tfhub_models_dir, include_optimizer=False)
-    return tfhub_models_dir
+    return str(tfhub_models_dir)
 
 def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], bit_width=8):
     model = get_tfhub_model(link)
