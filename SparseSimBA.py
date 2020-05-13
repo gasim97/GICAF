@@ -35,7 +35,7 @@ class SparseSimBA(AttackInterface):
         loss_label, p = top_preds[0]
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
-                        'ssim', 'psnr', 'image', 'probs'])
+                        'ssim', 'psnr', 'image', 'top_preds'])
         total_calls = 0
         delta = 0
         is_adv = 0
