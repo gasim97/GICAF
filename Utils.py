@@ -15,7 +15,7 @@ def saved_model_to_tflite(saved_model_path, model_name, bit_width=8):
     if (bit_width == 16):
         converter.target_spec.supported_types = [tf.float16]
     elif (bit_width != 8 and bit_width != 32):
-        print("Got a bit_width of " + bit_width + ". Expected 8, 16 or 32.")
+        print("Got a bit_width of " + str(bit_width) + ". Expected 8, 16 or 32.")
         raise ValueError
     tflite_model = converter.convert()
     tflite_models_dir = Path("tmp/tflite_models/" + model_name + "/")
