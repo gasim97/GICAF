@@ -44,7 +44,7 @@ def save_tfhub_model(model, model_name):
     info("Saving tfHub model to " + str(tfhub_models_dir))
     tfhub_models_dir.mkdir(exist_ok=True, parents=True)
     model.save(tfhub_models_dir, include_optimizer=False)
-    return str(tfhub_models_dir)
+    return tfhub_models_dir
 
 def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], bit_width=8):
     tflite_model_file = _tflite_model_file(model_name, bit_width)
@@ -60,5 +60,5 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
         model.predict(create_dummy_sample(input_dims))
         model.compile()
         tfhub_models_dir = save_tfhub_model(model, model_name)
-    tflite_model_file = saved_model_to_tflite(tfhub_models_dir, model_name, bit_width)
+    tflite_model_file = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
     return tflite_model_file
