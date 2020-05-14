@@ -12,16 +12,15 @@ from logging import info
 class SparseSimBA(AttackInterface):
 
     # initialize
-    def __init__(self): 
-        self.size = 1
-        self.epsilon = 64
+    def __init__(self, size=1, epsilon=64): 
+        self.size = size
+        self.epsilon = epsilon
 
     # runs the attack
-    def run(self, images, model, logger, query_limit=5000, dims=(224, 224, 3), bounds=(0.0, 1.0)): 
+    def run(self, images, model, logger, query_limit=5000, bounds=(0.0, 1.0)): 
         self.model = model
         self.logger = logger
         self.bounds = bounds
-        self.dims = dims
         for image in images:
             self.run_sparse_simba(image, query_limit=query_limit)
         # print("Attack module run() function missing")
@@ -161,9 +160,9 @@ class SparseSimBA(AttackInterface):
     def new_q_direction(self, done, size=1):
         [a,b,c] = self.sample_nums(done, size)
         done.append([a,b,c])
-        if len(done) >= self.dims[0]*self.dims[1]*self.dims[2]/size/size-2:
+        if len(done) >= self.model.metadata()['height']*self.model.metadata()['width']*self.model.metadata()['channels']/size/size-2:
             done = [] #empty it before it hits recursion limit
-        q = zeros((self.dims[0],self.dims[1],self.dims[2]))
+        q = zeros((self.model.metadata()['height'], self.model.metadata()['width'], self.model.metadata()['channels']))
         for i in range(size):
             for j in range(size):
                 q[a*size+i, b*size+j, c] = 1
@@ -172,8 +171,8 @@ class SparseSimBA(AttackInterface):
 
     def sample_nums(self, done, size=1):
         #samples new pixels without replacement
-        [a,b] = randint(0, high=self.dims[1]/size, size=2)
-        c = randint(0, high=3, size=1)[0]
+        [a,b] = randint(0, high=self.model.metadata()['height']/size, size=2)
+        c = randint(0, high=self.model.metadata()['channels'], size=1)[0]
         if [a,b,c] in done:
             #sample again (recursion)
             [a,b,c] = self.sample_nums(done, size)
