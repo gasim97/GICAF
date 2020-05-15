@@ -10,6 +10,7 @@ class Logger(LoggerInterface):
     # initialize
     def __init__(self): 
         self.logs = []
+        self.saved = False
 
     # new log
     def nl(self, fields):
@@ -19,6 +20,7 @@ class Logger(LoggerInterface):
 
     # log new item
     def append(self, data): 
+        self.saved = False
         log = self.logs[-1]
         index = len(log)
         log.loc[index] = data
@@ -48,10 +50,12 @@ class Logger(LoggerInterface):
         return save_dir/("experiement-" + str(experiment_id) + ".txt")
 
     def save(self):
-        save_file = str(self._save_file())
-        with open(save_file, "wb") as fn: 
-            dump(self.logs, fn)
-        info("Experiment logs saved to " + save_file)
+        if (not self.saved):
+            save_file = str(self._save_file())
+            with open(save_file, "wb") as fn: 
+                dump(self.logs, fn)
+            info("Experiment logs saved to " + save_file)
+            self.saved = True
 
     def load(self, experiement_id):
         load_file = str(self._save_dir()/("experiement-" + str(experiement_id) + ".txt"))

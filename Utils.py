@@ -6,7 +6,7 @@ from pathlib import Path
 from os.path import dirname
 
 def create_dummy_sample(dims=[None, 224, 224, 3]):
-  return array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: array(list(map(lambda z: 0.0, range(dims[3])))), range(dims[2])))), range(dims[1])))), range(dims[0] if dims[0] != None else 1))))
+    return array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: array(list(map(lambda z: 0.0, range(dims[3])))), range(dims[2])))), range(dims[1])))), range(dims[0] if dims[0] != None else 1))))
 
 def _tfhub_model_dir(model_name, create_dir=True):
     tfhub_models_dir = Path(dirname(__file__) + "/tmp/tfhub_models/" + model_name + "/")
