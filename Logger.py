@@ -6,7 +6,7 @@ from pathlib import Path
 from os.path import dirname
 
 class Logger(LoggerInterface):
-
+    
     # initialize
     def __init__(self): 
         self.logs = []
@@ -44,7 +44,7 @@ class Logger(LoggerInterface):
     def _save_file(self):
         save_dir = self._save_dir()
         files = [str(file_) for file_ in save_dir.iterdir()]
-        experiments = list(map(lambda exp: int(exp.split('-')[1].split('.')[0]), filter(lambda file_: file_.split('-')[0] == "experiement", files)))
+        experiments = list(map(lambda exp: int(exp.split('-')[1].split('.')[0]), filter(lambda file_: file_.split('-')[0] == "experiment", files)))
         experiment_id = 1
         if (len(experiments) > 0):
             experiment_id += max(experiments)
