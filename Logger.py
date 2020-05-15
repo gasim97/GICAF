@@ -43,20 +43,24 @@ class Logger(LoggerInterface):
 
     def _save_file(self):
         save_dir = self._save_dir()
+        save_dir_str = str(save_dir)
         files = [str(file_) for file_ in save_dir.iterdir()]
-        experiments = list(map(lambda exp: int(exp.split('-')[1].split('.')[0]), filter(lambda file_: file_.split('-')[0] == "experiment", files)))
+        experiments = list(map(lambda exp: int(exp.split('-')[1].split('.')[0]), filter(lambda f: f.split('-')[0] == (save_dir_str + "/experiment"), files)))
         experiment_id = 1
         if (len(experiments) > 0):
             experiment_id += max(experiments)
+        self.save_file = save_dir/("experiment-" + str(experiment_id) + ".txt")
         return save_dir/("experiment-" + str(experiment_id) + ".txt")
 
     def save(self):
-        if (not self.saved):
-            save_file = str(self._save_file())
-            with open(save_file, "wb") as fn: 
-                dump(self.logs, fn)
-            info("Experiment logs saved to " + save_file)
-            self.saved = True
+        if (self.saved):
+            info("Experiment logs already saved to " + self.save_file)
+            return
+        save_file = str(self._save_file())
+        with open(save_file, "wb") as fn: 
+            dump(self.logs, fn)
+        info("Experiment logs saved to " + save_file)
+        self.saved = True
 
     def load(self, experiment_id):
         load_file = str(self._save_dir()/("experiment-" + str(experiment_id) + ".txt"))
