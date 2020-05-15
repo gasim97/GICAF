@@ -1,8 +1,10 @@
 from gicaf.interface.LoadDataInterface import LoadDataInterface
-from numpy import array, arange, asarray
+from numpy import array, arange, asarray, float32
 from cv2 import cvtColor, COLOR_RGB2BGR
 from logging import info
 from keras.preprocessing.image import load_img
+from pickle import dump, load
+from pathlib import Path
 # from scipy.misc import imread, imresize
 # import os
 # import cv2
@@ -36,8 +38,8 @@ class LoadData(LoadDataInterface):
         return data
 
     def load_images(self, index_ranges, height, width, bgr=False):
-        info("Loading images (directory path = '" + self.test_set_file_path + "')...")
         meta_data = self.read_txt_file(index_ranges) # get image file names and ground truths
+        info("Loading images (directory path = '" + self.img_folder_path + "')...")
         x = list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(height, width), color_mode='rgb')), meta_data)) # load images for file names in meta_data
         if (bgr):
             x = list(map(lambda x: cvtColor(x, COLOR_RGB2BGR), x))
@@ -54,6 +56,29 @@ class LoadData(LoadDataInterface):
     def get_data_bgr(self, index_ranges, height, width): 
         return self.load_images(index_ranges, height, width, bgr=True)
     # returns [images], [ground truths]
+
+    def preprocessing(self, x, bounds=(0, 1), dtype=float32):
+        divisor = 255/(bounds[1] - bounds[0])
+        return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor, j)), dtype=dtype), i))), img))), x)))
+
+    def _save_dir(self):
+        save_dir = Path("tmp/saved_input_data/")
+        save_dir.mkdir(exist_ok=True, parents=True)
+        return save_dir
+
+    def _save_file(self, name):
+        save_dir = self._save_dir()
+        return save_dir/(name + ".txt")
+
+    def save_data(self, x, y, name):
+        data = list(zip(x, y))
+        with open(str(self._save_file(name)), "wb") as fn: 
+            dump(data, fn)
+
+    def load_data(self, name):
+        with open(str(self._save_file(name)), "rb") as fn: 
+            data = load(fn)
+        return array(list(map(lambda x: x[0], data))), array(list(map(lambda y: y[1], data)))
 
     # end of session clean up
     def close(self): 
