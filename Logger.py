@@ -43,7 +43,7 @@ class Logger(LoggerInterface):
 
     def _save_file(self):
         save_dir = self._save_dir()
-        experiements = [int(str(exp).split('-')[1]) for exp in save_dir.iterdir()]
+        experiements = [int(str(exp).split('-')[1].split('.')[0]) for exp in save_dir.iterdir()]
         experiment_id = 1
         if (len(experiements) > 0):
             experiment_id += max(experiements)
