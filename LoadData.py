@@ -5,7 +5,7 @@ from logging import info
 from keras.preprocessing.image import load_img
 from pickle import dump, load
 from pathlib import Path
-from os.path import abspath
+from os.path import abspath, dirname
 
 # from scipy.misc import imread, imresize
 # import os
@@ -64,7 +64,7 @@ class LoadData(LoadDataInterface):
         return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor, j)), dtype=dtype), i))), img))), x)))
 
     def _save_dir(self):
-        save_dir = Path(abspath('') + "/tmp/saved_input_data/")
+        save_dir = Path(abspath('') + "/" + dirname(__file__) + "/tmp/saved_input_data/")
         save_dir.mkdir(exist_ok=True, parents=True)
         return save_dir
 
