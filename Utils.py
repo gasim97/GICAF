@@ -3,19 +3,19 @@ import tensorflow_hub as hub
 from numpy import array
 from logging import info
 from pathlib import Path
-from os.path import abspath, dirname
+from os.path import dirname
 
 def create_dummy_sample(dims=[None, 224, 224, 3]):
   return array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: array(list(map(lambda z: 0.0, range(dims[3])))), range(dims[2])))), range(dims[1])))), range(dims[0] if dims[0] != None else 1))))
 
 def _tfhub_model_dir(model_name, create_dir=True):
-    tfhub_models_dir = Path(abspath('') + "/" + dirname(__file__) + "/tmp/tfhub_models/" + model_name + "/")
+    tfhub_models_dir = Path(dirname(__file__) + "/tmp/tfhub_models/" + model_name + "/")
     if (create_dir):
         tfhub_models_dir.mkdir(exist_ok=True, parents=True)
     return tfhub_models_dir
 
 def _tflite_model_dir(model_name, create_dir=True):
-    tflite_models_dir = Path(abspath('') + "/" + dirname(__file__) + "/tmp/tflite_models/" + model_name + "/")
+    tflite_models_dir = Path(dirname(__file__) + "/tmp/tflite_models/" + model_name + "/")
     if (create_dir):
         tflite_models_dir.mkdir(exist_ok=True, parents=True)
     return tflite_models_dir
