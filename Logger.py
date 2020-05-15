@@ -43,11 +43,11 @@ class Logger(LoggerInterface):
 
     def _save_file(self):
         save_dir = self._save_dir()
-        experiements = [int(str(exp).split('-')[1].split('.')[0]) for exp in save_dir.iterdir()]
+        experiments = [int(str(exp).split('-')[1].split('.')[0]) for exp in save_dir.iterdir()]
         experiment_id = 1
-        if (len(experiements) > 0):
-            experiment_id += max(experiements)
-        return save_dir/("experiement-" + str(experiment_id) + ".txt")
+        if (len(experiments) > 0):
+            experiment_id += max(experiments)
+        return save_dir/("experiment-" + str(experiment_id) + ".txt")
 
     def save(self):
         if (not self.saved):
@@ -58,8 +58,8 @@ class Logger(LoggerInterface):
             self.saved = True
 
     def load(self, experiement_id):
-        load_file = str(self._save_dir()/("experiement-" + str(experiement_id) + ".txt"))
-        with open(load_file, "wb") as fn: 
+        load_file = str(self._save_dir()/("experiment-" + str(experiement_id) + ".txt"))
+        with open(load_file, "rb") as fn: 
             self.logs = load(fn)
         info("Experiment logs loaded from " + load_file + "\nRun 'logger.get_all()' to get the loaded logs")
 
