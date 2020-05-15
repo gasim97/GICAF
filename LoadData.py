@@ -16,7 +16,7 @@ from os.path import dirname
 
 class LoadData(LoadDataInterface):
 
-    def __init__(self, test_set_file_path, img_folder_path):
+    def __init__(self, test_set_file_path="", img_folder_path=""):
         self.test_set_file_path = test_set_file_path
         self.img_folder_path = img_folder_path
 
