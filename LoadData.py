@@ -5,6 +5,8 @@ from logging import info
 from keras.preprocessing.image import load_img
 from pickle import dump, load
 from pathlib import Path
+from os.path import abspath
+
 # from scipy.misc import imread, imresize
 # import os
 # import cv2
@@ -62,7 +64,7 @@ class LoadData(LoadDataInterface):
         return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor, j)), dtype=dtype), i))), img))), x)))
 
     def _save_dir(self):
-        save_dir = Path("tmp/saved_input_data/")
+        save_dir = Path(abspath('') + "/tmp/saved_input_data/")
         save_dir.mkdir(exist_ok=True, parents=True)
         return save_dir
 
@@ -70,12 +72,12 @@ class LoadData(LoadDataInterface):
         save_dir = self._save_dir()
         return save_dir/(name + ".txt")
 
-    def save_data(self, x, y, name):
+    def save(self, x, y, name):
         data = list(zip(x, y))
         with open(str(self._save_file(name)), "wb") as fn: 
             dump(data, fn)
 
-    def load_data(self, name):
+    def load(self, name):
         with open(str(self._save_file(name)), "rb") as fn: 
             data = load(fn)
         return array(list(map(lambda x: x[0], data))), array(list(map(lambda y: y[1], data)))
