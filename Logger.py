@@ -7,7 +7,6 @@ from os.path import dirname
 
 class Logger(LoggerInterface):
     
-    # initialize
     def __init__(self): 
         self.logs = []
         self.saved = False

@@ -5,7 +5,6 @@ from logging import info
 
 class AttackEngine(AttackEngineInterface):
 
-    # initialize
     def __init__(self, x, y, model, attacks): 
         self.x = x
         self.y = y

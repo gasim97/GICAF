@@ -4,7 +4,6 @@ from numpy import array
 
 class ResNet50(FoolboxKerasModelInterface):
 
-    # initialize
     def __init__(self): 
         # sets up local ResNet50 model, to use for local testing
         keras.backend.set_learning_phase(0)

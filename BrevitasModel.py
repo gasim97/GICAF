@@ -222,3 +222,8 @@ class VGG19(PyTorchModel):
     def __init__(self, bit_width=8):
         model = _QuantVGG('VGG19', bit_width=bit_width)
         super(VGG19, self).__init__(model=model)
+
+    # get model metadata
+    def metadata(self): 
+        return {'height': 224, 'width': 224, 'channels': 3, 'bgr': False}
+    # returns input height, input width, input channels, (True if BGR else False) in a dictionary

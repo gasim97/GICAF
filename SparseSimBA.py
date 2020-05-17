@@ -11,7 +11,6 @@ from logging import info
 
 class SparseSimBA(AttackInterface):
 
-    # initialize
     def __init__(self, size=1, epsilon=64): 
         self.size = size
         self.epsilon = epsilon
