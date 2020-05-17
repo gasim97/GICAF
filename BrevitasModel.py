@@ -191,7 +191,8 @@ class _QuantVGG(nn.Module):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
+                if (m.bias != None):
+                    nn.init.constant_(m.bias, 0)
 
     def _make_layers(self, cfg, batch_norm, bit_width):
         layers = []
