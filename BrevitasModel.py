@@ -222,23 +222,22 @@ class _QuantVGG(nn.Module):
 
 class VGG19(PyTorchModel):
 
-    def __init__(self, x_train, y_train, bit_width=8):
-        model = _QuantVGG('VGG19', bit_width=bit_width)
-        self.train(model, x_train, y_train)
-        super(VGG19, self).__init__(model=model)
+    def __init__(self, bit_width=8):
+        self.vgg19 = _QuantVGG('VGG19', bit_width=bit_width)
+        info("Initialized VGG19, run 'model.train(x, y)' to train")
 
     # get model metadata
     def metadata(self): 
         return {'height': 224, 'width': 224, 'channels': 3, 'bgr': False}
     # returns input height, input width, input channels, (True if BGR else False) in a dictionary
 
-    def train(self, model, x, y):
+    def train(self, x, y):
         info("Training VGG19")
         dataset = torch.utils.data.TensorDataset(torch.tensor(x).float(), torch.tensor(y))
         data_loader = torch.utils.data.DataLoader(dataset)
 
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+        optimizer = optim.SGD(self.vgg19.parameters(), lr=0.001, momentum=0.9)
 
         for epoch in range(2):  # loop over the dataset multiple times
             running_loss = 0.0
@@ -250,7 +249,7 @@ class VGG19(PyTorchModel):
                 optimizer.zero_grad()
 
                 # forward + backward + optimize
-                outputs = net(inputs)
+                outputs = self.vgg19(inputs)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -261,5 +260,5 @@ class VGG19(PyTorchModel):
                     info('[%d, %5d] loss: %.3f' %
                         (epoch + 1, i + 1, running_loss / 2000))
                     running_loss = 0.0
-
         info('Finished training VGG19')
+        super(VGG19, self).__init__(model=self.vgg19)
