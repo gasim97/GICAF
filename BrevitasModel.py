@@ -1,11 +1,13 @@
 from gicaf.interface.ModelInterface import PyTorchModel
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import brevitas.nn as qnn
 from brevitas.core.quant import QuantType
 from brevitas.core.restrict_val import RestrictValueType
 from brevitas.core.scaling import ScalingImplType
 from brevitas.core.stats import StatsOp
+from logging import info
 
 QUANT_TYPE = QuantType.INT
 SCALING_MIN_VAL = 2e-16
@@ -156,7 +158,7 @@ def _make_hadamard_classifier(in_channels,
 
 class _QuantVGG(nn.Module):
 
-    def __init__(self, cfg, batch_norm=True, bit_width=8, num_classes=1000):
+    def __init__(self, cfg, batch_norm=False, bit_width=8, num_classes=1000):
         super(_QuantVGG, self).__init__()
         cfg = self.cfgs[cfg]
         self.features = self._make_layers(cfg, batch_norm, bit_width)
@@ -220,11 +222,44 @@ class _QuantVGG(nn.Module):
 
 class VGG19(PyTorchModel):
 
-    def __init__(self, bit_width=8):
+    def __init__(self, x_train, y_train, bit_width=8):
         model = _QuantVGG('VGG19', bit_width=bit_width)
+        self.train(model, x_train, y_train)
         super(VGG19, self).__init__(model=model)
 
     # get model metadata
     def metadata(self): 
         return {'height': 224, 'width': 224, 'channels': 3, 'bgr': False}
     # returns input height, input width, input channels, (True if BGR else False) in a dictionary
+
+    def train(self, model, x, y):
+        info("Training VGG19")
+        dataset = torch.utils.data.TensorDataset(torch.tensor(x).float(), torch.tensor(y))
+        data_loader = torch.utils.data.DataLoader(dataset)
+
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+        for epoch in range(2):  # loop over the dataset multiple times
+            running_loss = 0.0
+            for i, data in enumerate(data_loader, 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs, labels = data
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # forward + backward + optimize
+                outputs = net(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                # print statistics
+                running_loss += loss.item()
+                if i % 2000 == 1999:    # print every 2000 mini-batches
+                    info('[%d, %5d] loss: %.3f' %
+                        (epoch + 1, i + 1, running_loss / 2000))
+                    running_loss = 0.0
+
+        info('Finished training VGG19')

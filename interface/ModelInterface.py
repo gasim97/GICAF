@@ -158,11 +158,11 @@ class PyTorchModel(ModelInterface):
 
     # run inference
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.model(image))
+        return self.zip_labels_to_probs(self.model([image]).detach().numpy()[0])
 
     # run inference on batch
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model(images))))
+        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model(images).detach().numpy())))
 
     # run inference and return top 1
     def get_top_1(self, image): 
