@@ -101,7 +101,7 @@ class TfLiteModel(ModelInterface):
         self.input_index = self.interpreter.get_input_details()[0]["index"]
         self.output_index = self.interpreter.get_output_details()[0]["index"]
 
-    def evaluate(self, image):
+    def _evaluate(self, image):
         # Pre-processing: add batch dimension and convert to float32 to match with
         # the model's input data format.
         img = expand_dims(image, axis=0).astype(float32)
@@ -115,13 +115,13 @@ class TfLiteModel(ModelInterface):
 
     # run inference
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.evaluate(image))
+        return self.zip_labels_to_probs(self._evaluate(image))
 
     # run inference on batch
     def get_preds_batch(self, images): 
         predictions = []
         for img in images:
-            predictions.append(self.evaluate(img))
+            predictions.append(self._evaluate(img))
         return array(list(map(lambda x: self.zip_labels_to_probs(x), predictions)))
 
     # run inference and return top 1
@@ -152,17 +152,17 @@ class PyTorchModel(ModelInterface):
 
     # initialize
     @abstractmethod
-    def __init__(self): 
-        print("Model module __init__() function missing")
-        raise NotImplementedError
+    def __init__(self, model): 
+        self.model = model
+        self.model.eval()
 
     # run inference
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.model.predictions(image))
+        return self.zip_labels_to_probs(self.model(image))
 
     # run inference on batch
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model.batch_predictions(images))))
+        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model(images))))
 
     # run inference and return top 1
     def get_top_1(self, image): 

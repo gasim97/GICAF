@@ -54,7 +54,7 @@ class Logger(LoggerInterface):
 
     def save(self):
         if (self.saved):
-            info("Experiment logs already saved to " + self.save_file)
+            info("Experiment logs already saved to " + str(self.save_file))
             return
         save_file = str(self._save_file())
         with open(save_file, "wb") as fn: 
