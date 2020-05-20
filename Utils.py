@@ -116,20 +116,20 @@ def save_to_new_gdrive(gdrive_file_name='gicaf_tmp.zip'):
     drive = _get_gdrive_drive()
     _zip_dir()
     upload = drive.CreateFile({'title': gdrive_file_name})
-    upload.SetContentFile('tmp.zip')
+    upload.SetContentFile('gicaf/tmp.zip')
     upload.Upload()
     _remove_file()
 
 def save_to_gdrive(gdrive_file_name='gicaf_tmp.zip'):  
     _zip_dir()
     upload = _get_gdrive_file_metadata(gdrive_file_name)
-    upload.SetContentFile('tmp.zip')
+    upload.SetContentFile('gicaf/tmp.zip')
     upload.Upload()
     _remove_file()
 
 def load_from_gdrive(gdrive_file_name='gicaf_tmp.zip'):
     drive = _get_gdrive_drive()
     download = drive.CreateFile({'id': _get_gdrive_file_metadata(gdrive_file_name)['id']})
-    download.GetContentFile('tmp.zip')
+    download.GetContentFile('gicaf/tmp.zip')
     _unzip_file()
     _remove_file()
