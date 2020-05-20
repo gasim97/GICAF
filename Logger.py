@@ -49,7 +49,7 @@ class Logger(LoggerInterface):
         if (len(experiments) > 0):
             experiment_id += max(experiments)
         self.save_file = save_dir/("experiment-" + str(experiment_id) + ".txt")
-        return save_dir/("experiment-" + str(experiment_id) + ".txt")
+        return self.save_file
 
     def save(self):
         if (self.saved):

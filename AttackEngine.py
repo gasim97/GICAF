@@ -26,9 +26,8 @@ class AttackEngine(AttackEngineInterface):
     def run(self): 
         for attack in self.attacks:
             attack.run(self.x, self.model, self.logger)
-        self.logger.save()
     # returns adversarial image, attack log
 
     # end of session clean up
     def close(self): 
-        pass
+        self.logger.close()

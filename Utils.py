@@ -3,19 +3,28 @@ import tensorflow_hub as hub
 from numpy import array
 from logging import info
 from pathlib import Path
-from os.path import dirname
+from os import path, walk, remove
+from zipfile import ZipFile
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+from google.colab import auth
+from oauth2client.client import GoogleCredentials
+import subprocess
+from sys import executable
+
+# TensorFlow Lite and hub helper functions
 
 def create_dummy_sample(dims=[None, 224, 224, 3]):
     return array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: array(list(map(lambda z: 0.0, range(dims[3])))), range(dims[2])))), range(dims[1])))), range(dims[0] if dims[0] != None else 1))))
 
 def _tfhub_model_dir(model_name, create_dir=True):
-    tfhub_models_dir = Path(dirname(__file__) + "/tmp/tfhub_models/" + model_name + "/")
+    tfhub_models_dir = Path(path.dirname(__file__) + "/tmp/tfhub_models/" + model_name + "/")
     if (create_dir):
         tfhub_models_dir.mkdir(exist_ok=True, parents=True)
     return tfhub_models_dir
 
 def _tflite_model_dir(model_name, create_dir=True):
-    tflite_models_dir = Path(dirname(__file__) + "/tmp/tflite_models/" + model_name + "/")
+    tflite_models_dir = Path(path.dirname(__file__) + "/tmp/tflite_models/" + model_name + "/")
     if (create_dir):
         tflite_models_dir.mkdir(exist_ok=True, parents=True)
     return tflite_models_dir
@@ -43,7 +52,6 @@ def get_tfhub_model(link):
     info("Getting tfHub model")
     return tf.keras.Sequential([hub.KerasLayer(link)])
 
-
 def save_tfhub_model(model, model_name):
     tfhub_models_dir = _tfhub_model_dir(model_name)
     info("Saving tfHub model to " + str(tfhub_models_dir))
@@ -66,3 +74,62 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
         tfhub_models_dir = save_tfhub_model(model, model_name)
     tflite_model_file = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
     return tflite_model_file
+
+# Google Drive helper functions
+
+def _remove_file(file_name='tmp.zip'):
+    remove(Path(path.dirname(__file__) + "/" + file_name))
+
+def _zip_dir(dir_name="tmp"):
+    with ZipFile(dir_name + '.zip', 'w') as zip_file:
+        for folder_name, _, file_names in walk(dir_name):
+            for file_name in file_names:
+                file_path = path.join(folder_name, file_name)
+                info("Compressing " + str(file_path))
+                zip_file.write(file_path, path.basename(file_path))
+
+def _unzip_file(file_name='tmp'):   
+    with ZipFile(file_name + '.zip', 'r') as zip_file:
+        zip_file.extractall()
+
+def install_gdrive_dependencies():
+    subprocess.check_call([executable, "-m", "pip", "install", "PyDrive"])
+    subprocess.check_call([executable, "-m", "pip", "install", "httplib2==0.15.0"])
+    subprocess.check_call([executable, "-m", "pip", "install", "google-api-python-client==1.7.11"])
+
+def _get_gdrive_drive():
+    auth.authenticate_user()
+    gauth = GoogleAuth()
+    gauth.credentials = GoogleCredentials.get_application_default()
+    drive = GoogleDrive(gauth)
+    return drive
+
+def _get_gdrive_file_metadata(file_name):
+    drive = _get_gdrive_drive()
+    file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+    for file_ in file_list:
+        if file_['title'] == file_name:
+            break
+    return file_
+
+def save_to_new_gdrive(gdrive_file_name='gicaf_tmp.zip'):
+    drive = _get_gdrive_drive()
+    _zip_dir()
+    upload = drive.CreateFile({'title': gdrive_file_name})
+    upload.SetContentFile('tmp.zip')
+    upload.Upload()
+    _remove_file()
+
+def save_to_gdrive(gdrive_file_name='gicaf_tmp.zip'):  
+    _zip_dir()
+    upload = _get_gdrive_file_metadata(gdrive_file_name)
+    upload.SetContentFile('tmp.zip')
+    upload.Upload()
+    _remove_file()
+
+def load_from_gdrive(gdrive_file_name='gicaf_tmp.zip'):
+    drive = _get_gdrive_drive()
+    download = drive.CreateFile({'id': _get_gdrive_file_metadata(gdrive_file_name)['id']})
+    download.GetContentFile('tmp.zip')
+    _unzip_file()
+    _remove_file()
