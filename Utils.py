@@ -81,7 +81,7 @@ def _remove_file(file_name='tmp.zip'):
     remove(Path(path.dirname(__file__) + "/" + file_name))
 
 def _zip_dir(dir_name="tmp"):
-    with ZipFile(dir_name + '.zip', 'w') as zip_file:
+    with ZipFile('gicaf/' + dir_name + '.zip', 'w') as zip_file:
         for folder_name, _, file_names in walk(dir_name):
             for file_name in file_names:
                 file_path = path.join(folder_name, file_name)
@@ -89,7 +89,7 @@ def _zip_dir(dir_name="tmp"):
                 zip_file.write(file_path, path.basename(file_path))
 
 def _unzip_file(file_name='tmp'):   
-    with ZipFile(file_name + '.zip', 'r') as zip_file:
+    with ZipFile('gicaf/' + file_name + '.zip', 'r') as zip_file:
         zip_file.extractall()
 
 def install_gdrive_dependencies():
