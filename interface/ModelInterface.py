@@ -119,10 +119,7 @@ class TfLiteModel(ModelInterface):
 
     # run inference on batch
     def get_preds_batch(self, images): 
-        predictions = []
-        for img in images:
-            predictions.append(self._evaluate(img))
-        return array(list(map(lambda x: self.zip_labels_to_probs(x), predictions)))
+        return array(list(map(lambda img: self.zip_labels_to_probs(self._evaluate(img)), images)))
 
     # run inference and return top 1
     def get_top_1(self, image): 

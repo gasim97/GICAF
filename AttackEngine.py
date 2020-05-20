@@ -3,6 +3,8 @@ from gicaf.Logger import Logger
 from numpy import array
 from logging import info
 
+# TODO: Allow memory for samples of the same class
+
 class AttackEngine(AttackEngineInterface):
 
     def __init__(self, x, y, model, attacks): 
