@@ -82,7 +82,7 @@ def _remove_file(file_name='tmp.zip'):
 
 def _zip_dir(dir_name="tmp"):
     with ZipFile('gicaf/' + dir_name + '.zip', 'w') as zip_file:
-        for folder_name, _, file_names in walk(dir_name):
+        for folder_name, _, file_names in walk('gicaf/' + dir_name):
             for file_name in file_names:
                 file_path = path.join(folder_name, file_name)
                 info("Compressing " + str(file_path))
