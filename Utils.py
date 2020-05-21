@@ -125,7 +125,7 @@ def _save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp'):
 def save_tmp_to_gdrive(gdrive_file_name='gicaf_tmp'):  
     upload = _get_gdrive_file_metadata(gdrive_file_name + ".zip")
     if (upload == None):
-        _save_tmp_to_new_gdrive(gdrive_file_name + ".zip")
+        _save_tmp_to_new_gdrive(gdrive_file_name)
         return
     _zip_dir()
     upload.SetContentFile('gicaf/tmp.zip')
