@@ -113,7 +113,6 @@ def _get_gdrive_file_metadata(file_name):
     return None
 
 def _save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp'):
-    gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     _zip_dir()
     upload = drive.CreateFile({'title': gdrive_file_name})
