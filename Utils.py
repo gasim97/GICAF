@@ -4,7 +4,7 @@ from numpy import array
 from logging import info
 from pathlib import Path
 from os import path, walk, remove
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from google.colab import auth
@@ -81,7 +81,7 @@ def _remove_file(file_name='tmp.zip'):
     remove(Path(path.dirname(__file__) + "/" + file_name))
 
 def _zip_dir(dir_name="tmp"):
-    with ZipFile('gicaf/' + dir_name + '.zip', 'w') as zip_file:
+    with ZipFile('gicaf/' + dir_name + '.zip', 'w', ZIP_DEFLATED) as zip_file:
         for folder_name, _, file_names in walk('gicaf/' + dir_name):
             for file_name in file_names:
                 file_path = path.join(folder_name, file_name)
