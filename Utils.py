@@ -109,10 +109,11 @@ def _get_gdrive_file_metadata(file_name):
     file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
     for file_ in file_list:
         if file_['title'] == file_name:
-            break
-    return file_
+            return file_
+    return None
 
-def save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp.zip'):
+def _save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp'):
+    gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     _zip_dir()
     upload = drive.CreateFile({'title': gdrive_file_name})
@@ -121,15 +122,19 @@ def save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp.zip'):
     _remove_file()
     info("Saved compressed GICAF tmp folder to Google Drive as '" + gdrive_file_name + "'")
 
-def save_tmp_to_gdrive(gdrive_file_name='gicaf_tmp.zip'):  
+def save_tmp_to_gdrive(gdrive_file_name='gicaf_tmp'):  
+    upload = _get_gdrive_file_metadata(gdrive_file_name + ".zip")
+    if (upload == None):
+        _save_tmp_to_new_gdrive(gdrive_file_name + ".zip")
+        return
     _zip_dir()
-    upload = _get_gdrive_file_metadata(gdrive_file_name)
     upload.SetContentFile('gicaf/tmp.zip')
     upload.Upload()
     _remove_file()
     info("Updated compressed GICAF tmp folder '" + gdrive_file_name + "' on Google Drive")
 
-def load_tmp_from_gdrive(gdrive_file_name='gicaf_tmp.zip'):
+def load_tmp_from_gdrive(gdrive_file_name='gicaf_tmp'):
+    gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     download = drive.CreateFile({'id': _get_gdrive_file_metadata(gdrive_file_name)['id']})
     download.GetContentFile('gicaf/tmp.zip')
