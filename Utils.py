@@ -12,6 +12,13 @@ from oauth2client.client import GoogleCredentials
 import subprocess
 from sys import executable
 
+def install_dependencies():
+    subprocess.check_call([executable, "-m", "pip", "install", "git+https://github.com/Xilinx/brevitas.git"])
+    subprocess.check_call([executable, "-m", "pip", "install", "git+https://github.com/alvarorobledo/foolbox.git"])
+    subprocess.check_call([executable, "-m", "pip", "install", "PyDrive"])
+    subprocess.check_call([executable, "-m", "pip", "install", "httplib2==0.15.0"])
+    subprocess.check_call([executable, "-m", "pip", "install", "google-api-python-client==1.7.11"])
+
 # TensorFlow Lite and hub helper functions
 
 def create_dummy_sample(dims=[None, 224, 224, 3]):
@@ -92,11 +99,6 @@ def _unzip_file(file_name='tmp'):
     with ZipFile('gicaf/' + file_name + '.zip', 'r') as zip_file:
         zip_file.extractall()
 
-def install_gdrive_dependencies():
-    subprocess.check_call([executable, "-m", "pip", "install", "PyDrive"])
-    subprocess.check_call([executable, "-m", "pip", "install", "httplib2==0.15.0"])
-    subprocess.check_call([executable, "-m", "pip", "install", "google-api-python-client==1.7.11"])
-
 def _get_gdrive_drive():
     auth.authenticate_user()
     gauth = GoogleAuth()
@@ -131,7 +133,7 @@ def save_tmp_to_gdrive(gdrive_file_name='gicaf_tmp'):
     upload.SetContentFile('gicaf/tmp.zip')
     upload.Upload()
     _remove_file()
-    info("Updated compressed GICAF tmp folder '" + gdrive_file_name + "' on Google Drive")
+    info("Updated compressed GICAF tmp folder '" + gdrive_file_name + ".zip' on Google Drive")
 
 def load_tmp_from_gdrive(gdrive_file_name='gicaf_tmp'):
     gdrive_file_name = gdrive_file_name + ".zip"
