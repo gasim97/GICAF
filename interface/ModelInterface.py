@@ -21,29 +21,41 @@ class ModelInterface:
         raise NotImplementedError("Model module get_model_meta() function missing")
     # returns input height, input width, input channels, (True if BGR else False)
 
+    # run inference
+    @abstractmethod
+    def get_preds(self, image):
+        return self.zip_labels_to_probs(self.model([image]).detach().numpy()[0])
+    # returns [[label, probability]] -> shape = (number of classes, 2), type: numpy.ndarray
+
+    # run inference on batch
+    @abstractmethod
+    def get_preds_batch(self, images): 
+        raise NotImplementedError("Model module get_top_1() function missing")
+    # returns [[[label, probability]]] -> shape = (batch size, number of classes, 2), type: numpy.ndarray
+
     # run inference and return top 1
     @abstractmethod
     def get_top_1(self, image): 
         raise NotImplementedError("Model module get_top_1() function missing")
-    # returns [label, probability] -> shape = (1, 2)
+    # returns [label, probability] -> shape = (2,), type: numpy.ndarray
 
     # run inference on batch and return top 1
     @abstractmethod
     def get_top_1_batch(self, images): 
         raise NotImplementedError("Model module get_top_1_batch() function missing")
-    # returns [[label, probability]] -> shape = (batch size, 2)
+    # returns [[label, probability]] -> shape = (batch size, 2), type: numpy.ndarray
 
     # run inference and return top 5 ORDERED HIGHEST TO LOWEST
     @abstractmethod
     def get_top_5(self, image): 
         raise NotImplementedError("Model module get_top_5() function missing")
-    # returns [[label, probability]] -> shape = (5, 2)
+    # returns [[label, probability]] -> shape = (5, 2), type: numpy.ndarray
 
     # run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
     @abstractmethod
     def get_top_5_batch(self, images): 
         raise NotImplementedError("Model module get_top_5_batch() function missing")
-    # returns [[[label, probability]]] -> shape = (batch size, 5, 2)
+    # returns [[[label, probability]]] -> shape = (batch size, 5, 2), type: numpy.ndarray
 
     # end of session clean up
     @abstractmethod

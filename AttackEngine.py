@@ -12,7 +12,7 @@ class AttackEngine(AttackEngineInterface):
         self.y = y
         self.model = model
         self.attacks = attacks
-        self.logger = Logger()
+        self.loggers = []
         self._filter_wrong_predictions()
 
     def _filter_wrong_predictions(self):
@@ -25,9 +25,14 @@ class AttackEngine(AttackEngineInterface):
     # runs the attack
     def run(self): 
         for attack in self.attacks:
-            attack.run(self.x, self.model, self.logger)
+            self.loggers.append(Logger())
+            attack.run(self.x, self.model, self.loggers[-1])
     # returns adversarial image, attack log
+
+    def get_logs(self):
+        return self.loggers
 
     # end of session clean up
     def close(self): 
-        self.logger.close()
+        for logger in self.loggers:
+            logger.close()

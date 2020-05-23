@@ -1,13 +1,14 @@
 from gicaf.interface.AttackInterface import AttackInterface
 import gicaf.Stats as stats
 from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros
+from numpy import clip, argwhere, zeros, array, log, full, gradient, flip
 from numpy.linalg import norm
 from numpy.random import randint
+from scipy.special import softmax
 import time
 from logging import info
 
-class SparseSimBA(AttackInterface):
+class HSSparseSimBA(AttackInterface):
 
     def __init__(self, size=1, epsilon=64): 
         self.size = size
@@ -31,6 +32,7 @@ class SparseSimBA(AttackInterface):
 
         ####
         loss_label, p = top_preds[0]
+        self.calcHS(image, loss_label)
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
                         'ssim', 'psnr', 'image', 'top_preds'])
@@ -113,11 +115,33 @@ class SparseSimBA(AttackInterface):
                 
         return adv, total_calls
 
+    def calcHS(self, image, label):
+        delta = full([self.height, self.width, self.channels], self.epsilon/self.channels)
+        x_pos = clip(image + delta, self.bounds[0], self.bounds[1])
+        x_neg = clip(image - delta, self.bounds[0], self.bounds[1])
+        preds = [array(list(map(lambda p: p[1], self.model.get_preds(x_neg)))), array(list(map(lambda p: p[1], self.model.get_preds(image)))), array(list(map(lambda p: p[1], self.model.get_preds(x_pos))))] # map to extract probability in position 1 of each element and throw away label
+
+        y = array(list(map(lambda i: 0 if i != label else 1, len(preds))))
+        betas = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5, 2.0]
+        max_norm = 0
+        for beta in betas:
+            loss = [-y.T*log(softmax(beta*preds[0])), -y.T*log(softmax(beta*preds[1])), -y.T*log(softmax(beta*preds[2]))]
+            norm = gradient(gradient(loss))
+            if (norm > max_norm):
+                max_norm = norm
+                self.beta = beta
+
+    def get_top_5(self, x):
+        preds = self.model.get_preds(x)
+        probs = softmax(self.beta*list(map(lambda x: x[1], preds)))
+        preds = array(list(map(lambda x: array([x[0], probs[x[0]]]), preds)))
+        return flip(preds[preds[:, 1].argsort()][-5:], 0)
+
     def check_pos(self, x, delta, q, p, loss_label):
         success = False #initialise as False by default
         pos_x = x + delta + self.epsilon * q
         pos_x = clip(pos_x, self.bounds[0], self.bounds[1])
-        top_5_preds = self.model.get_top_5(pos_x)
+        top_5_preds = self.get_top_5(pos_x)
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
         if len(idx) == 0:
@@ -135,7 +159,7 @@ class SparseSimBA(AttackInterface):
         success = False #initialise as False by default
         neg_x = x + delta - self.epsilon * q
         neg_x = clip(neg_x, self.bounds[0], self.bounds[1])
-        top_5_preds = self.model.get_top_5(neg_x)
+        top_5_preds = self.get_top_5(neg_x)
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
         if len(idx) == 0:
