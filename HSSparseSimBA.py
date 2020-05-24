@@ -1,7 +1,7 @@
 from gicaf.interface.AttackInterface import AttackInterface
 import gicaf.Stats as stats
 from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace
+from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty
 from numpy.linalg import norm
 from numpy.random import randint
 from scipy.special import softmax
@@ -32,7 +32,7 @@ class HSSparseSimBA(AttackInterface):
 
         ####
         loss_label, p = top_preds[0]
-        self.calcHS(image, loss_label)
+        self.calcHSFull(image, loss_label)
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
                         'ssim', 'psnr', 'image', 'top_preds'])
@@ -115,11 +115,61 @@ class HSSparseSimBA(AttackInterface):
                 
         return adv, total_calls
 
+    def hessian(self, x):
+        """
+        Calculate the hessian matrix with finite differences
+        Parameters:
+        - x : ndarray
+        Returns:
+        an array of shape (x.dim, x.ndim) + x.shape
+        where the array[i, j, ...] corresponds to the second derivative x_ij
+        """
+        x_grad = gradient(x) 
+        hessian = empty((x.ndim, x.ndim) + x.shape, dtype=x.dtype) 
+        for k, grad_k in enumerate(x_grad):
+            # iterate over dimensions
+            # apply gradient again to every component of the first derivative.
+            tmp_grad = gradient(grad_k) 
+            for l, grad_kl in enumerate(tmp_grad):
+                hessian[k, l, :, :] = grad_kl
+        return hessian
+
+    def calcHSFull(self, image, label):
+        preds = empty((self.height, self.width, self.channels))
+        y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
+        for a in range(self.height):
+            for b in range(self.width):
+                for c in range(self.channels):
+                    q = self.q_direction(a, b, c)
+                    x = clip(image + (self.epsilon * q), self.bounds[0], self.bounds[1])
+                    preds[a][b][c] = array(list(map(lambda p: p[1], self.model.get_preds(x))))
+
+        betas = linspace(0.1, 2, 20)
+        max_norm = 0
+        for beta in betas:
+            losses = empty((self.height, self.width, self.channels))
+            for a in range(self.height):
+                for b in range(self.width):
+                    for c in range(self.channels):
+                        losses[a][b][c] = dot(-y.T, log(softmax(beta*log(preds[a][b][c]))))
+            hessian_norm = norm(self.hessian(losses))
+            print('beta, hessian norm: ' + str(beta) + ', ' + str(hessian_norm))
+            if (hessian_norm > max_norm):
+                max_norm = hessian_norm
+                self.beta = beta
+        print('Selected beta: ' + str(self.beta))
+
     def calcHS(self, image, label):
         delta = full([self.height, self.width, self.channels], self.epsilon/(self.height*self.width*self.channels))
         x_pos = clip(image + delta, self.bounds[0], self.bounds[1])
+        x_pos_2 = clip(x_pos + delta, self.bounds[0], self.bounds[1])
         x_neg = clip(image - delta, self.bounds[0], self.bounds[1])
-        preds = [array(list(map(lambda p: p[1], self.model.get_preds(x_neg)))), array(list(map(lambda p: p[1], self.model.get_preds(image)))), array(list(map(lambda p: p[1], self.model.get_preds(x_pos))))] # map to extract probability in position 1 of each element and throw away label
+        x_neg_2 = clip(x_neg - delta, self.bounds[0], self.bounds[1])
+        preds = [array(list(map(lambda p: p[1], self.model.get_preds(x_neg_2)))), 
+                  array(list(map(lambda p: p[1], self.model.get_preds(x_neg)))), 
+                  array(list(map(lambda p: p[1], self.model.get_preds(image)))), 
+                  array(list(map(lambda p: p[1], self.model.get_preds(x_pos)))),
+                  array(list(map(lambda p: p[1], self.model.get_preds(x_pos_2))))] # map to extract probability in position 1 of each element and throw away label
 
         y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
         betas = linspace(0.1, 2, 20)
@@ -131,6 +181,7 @@ class HSSparseSimBA(AttackInterface):
             if (hessian_norm > max_norm):
                 max_norm = hessian_norm
                 self.beta = beta
+        print('Selected beta: ' + str(self.beta))
 
     def get_top_5(self, x):
         preds = self.model.get_preds(x)
@@ -150,7 +201,7 @@ class HSSparseSimBA(AttackInterface):
             return delta, p, top_5_preds, success
         idx = idx[0][0]
         p_test = top_5_preds[idx][1]
-        if p_test < p:
+        if p_test < p or idx != 0:
             delta = delta + self.epsilon*q #add new perturbation to total perturbation
             p = p_test #update new p
             success = True
@@ -168,7 +219,7 @@ class HSSparseSimBA(AttackInterface):
             return delta, p, top_5_preds, success
         idx = idx[0][0]
         p_test = top_5_preds[idx][1]
-        if p_test < p:
+        if p_test < p or idx != 0:
             delta = delta - self.epsilon*q #add new perturbation to total perturbation
             p = p_test #update new p 
             success = True
@@ -183,12 +234,16 @@ class HSSparseSimBA(AttackInterface):
         done.append([a,b,c])
         if len(done) >= self.height*self.width*self.channels/self.size/self.size-2:
             done = [] #empty it before it hits recursion limit
+        q = self.q_direction(a, b, c)
+        return q, done
+
+    def q_direction(self, a, b, c):
         q = zeros((self.height, self.width, self.channels))
         for i in range(self.size):
             for j in range(self.size):
                 q[a*self.size+i, b*self.size+j, c] = 1
         q = q/norm(q)
-        return q, done
+        return q
 
     def sample_nums(self, done):
         #samples new pixels without replacement

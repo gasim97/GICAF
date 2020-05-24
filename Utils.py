@@ -139,6 +139,9 @@ def load_tmp_from_gdrive(gdrive_file_name='gicaf_tmp'):
     gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     download = drive.CreateFile({'id': _get_gdrive_file_metadata(gdrive_file_name)['id']})
+    if (download == None):
+        info("Failed to find '" + gdrive_file_name + "' on Google Drive, enure that the tmp folder has been saved before and the correct file name is being used")
+        return
     download.GetContentFile('gicaf/tmp.zip')
     _unzip_file()
     _remove_file()
