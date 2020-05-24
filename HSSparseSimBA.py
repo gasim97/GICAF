@@ -1,7 +1,7 @@
 from gicaf.interface.AttackInterface import AttackInterface
 import gicaf.Stats as stats
 from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros, array, log, full, gradient, flip
+from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace
 from numpy.linalg import norm
 from numpy.random import randint
 from scipy.special import softmax
@@ -116,25 +116,26 @@ class HSSparseSimBA(AttackInterface):
         return adv, total_calls
 
     def calcHS(self, image, label):
-        delta = full([self.height, self.width, self.channels], self.epsilon/self.channels)
+        delta = full([self.height, self.width, self.channels], self.epsilon/(self.height*self.width*self.channels))
         x_pos = clip(image + delta, self.bounds[0], self.bounds[1])
         x_neg = clip(image - delta, self.bounds[0], self.bounds[1])
         preds = [array(list(map(lambda p: p[1], self.model.get_preds(x_neg)))), array(list(map(lambda p: p[1], self.model.get_preds(image)))), array(list(map(lambda p: p[1], self.model.get_preds(x_pos))))] # map to extract probability in position 1 of each element and throw away label
 
-        y = array(list(map(lambda i: 0 if i != label else 1, len(preds))))
-        betas = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5, 2.0]
+        y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
+        betas = linspace(0.1, 2, 20)
         max_norm = 0
         for beta in betas:
-            loss = [-y.T*log(softmax(beta*preds[0])), -y.T*log(softmax(beta*preds[1])), -y.T*log(softmax(beta*preds[2]))]
-            norm = gradient(gradient(loss))
-            if (norm > max_norm):
-                max_norm = norm
+            loss = [dot(-y.T, log(softmax(beta*log(preds[0])))), dot(-y.T, log(softmax(beta*log(preds[1])))), dot(-y.T, log(softmax(beta*log(preds[2]))))]
+            hessian_norm = norm(gradient(gradient(loss)))
+            print('beta, hessian norm: ' + str(beta) + ', ' + str(hessian_norm))
+            if (hessian_norm > max_norm):
+                max_norm = hessian_norm
                 self.beta = beta
 
     def get_top_5(self, x):
         preds = self.model.get_preds(x)
-        probs = softmax(self.beta*list(map(lambda x: x[1], preds)))
-        preds = array(list(map(lambda x: array([x[0], probs[x[0]]]), preds)))
+        probs = softmax(self.beta*log(array(list(map(lambda x: x[1], preds)))))
+        preds = array(list(map(lambda x: array([int(x[0]), probs[int(x[0])]]), preds)))
         return flip(preds[preds[:, 1].argsort()][-5:], 0)
 
     def check_pos(self, x, delta, q, p, loss_label):

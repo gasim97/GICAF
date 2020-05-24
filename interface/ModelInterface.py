@@ -24,13 +24,13 @@ class ModelInterface:
     # run inference
     @abstractmethod
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.model([image]).detach().numpy()[0])
+        raise NotImplementedError("Model module v() function missing")
     # returns [[label, probability]] -> shape = (number of classes, 2), type: numpy.ndarray
 
     # run inference on batch
     @abstractmethod
     def get_preds_batch(self, images): 
-        raise NotImplementedError("Model module get_top_1() function missing")
+        raise NotImplementedError("Model module get_preds_batch() function missing")
     # returns [[[label, probability]]] -> shape = (batch size, number of classes, 2), type: numpy.ndarray
 
     # run inference and return top 1
