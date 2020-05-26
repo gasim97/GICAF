@@ -1,7 +1,7 @@
 import subprocess
 from sys import executable
 
-def install_dependencies():
+def install():
     subprocess.check_call([executable, "-m", "pip", "install", "git+https://github.com/Xilinx/brevitas.git"])
     subprocess.check_call([executable, "-m", "pip", "install", "git+https://github.com/alvarorobledo/foolbox.git"])
     subprocess.check_call([executable, "-m", "pip", "install", "opencv-python"])
