@@ -9,15 +9,6 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from google.colab import auth
 from oauth2client.client import GoogleCredentials
-import subprocess
-from sys import executable
-
-def install_dependencies():
-    subprocess.check_call([executable, "-m", "pip", "install", "git+https://github.com/Xilinx/brevitas.git"])
-    subprocess.check_call([executable, "-m", "pip", "install", "git+https://github.com/alvarorobledo/foolbox.git"])
-    subprocess.check_call([executable, "-m", "pip", "install", "PyDrive"])
-    subprocess.check_call([executable, "-m", "pip", "install", "httplib2==0.15.0"])
-    subprocess.check_call([executable, "-m", "pip", "install", "google-api-python-client==1.7.11"])
 
 # TensorFlow Lite and hub helper functions
 
