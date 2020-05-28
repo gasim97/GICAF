@@ -30,7 +30,7 @@ class ModelInterface:
                     'bounds' : 2-tuple with elements of type int
                         Contains (min, max) of input values
                     'bgr' : bool
-                        True if input is to be loaded in BGR format, and False if RGB or otherwise
+                        True if input is to be loaded in BGR format, and False if RGB
                     'classes': int
                         Number of output classes
                     'weight_bits': int
@@ -180,7 +180,6 @@ class KerasModel(ModelInterface):
     def get_preds_batch(self, images): 
         return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model.predict(images))))
 
-
 class TfLiteModel(ModelInterface):
     # initialize
     def __init__(self, interpreter, metadata): 
@@ -210,9 +209,6 @@ class TfLiteModel(ModelInterface):
     # run inference on batch
     def get_preds_batch(self, images): 
         return array(list(map(lambda img: self.zip_labels_to_probs(self._evaluate(img)), images)))
-
-    # def foolboxModelWrapper(self):
-
 
 class PyTorchModel(ModelInterface):
 

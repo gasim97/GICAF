@@ -26,14 +26,17 @@ from torch import nn
 import torch.nn.functional as F
 from torchvision.transforms.functional import to_tensor
 import numpy as np
+from PIL import Image
+from os.path import dirname
 
-def get_FRnet(weights_path='checkpoints/WaDIQaM-FR-KADID-10K-EXP1000-5-lr=0.0001-bs=4'):
-    model = FRnet(weighted_average=True)
-    model.load_state_dict(weights_path)
+def get_FRnet(weights_path=dirname(__file__) + '/checkpoints/WaDIQaM-FR-KADID-10K-EXP1000-5-lr=0.0001-bs=4'):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = FRnet(weighted_average=True).to(device)
+    model.load_state_dict(torch.load(weights_path, map_location=device))
     model.eval()
     return model
 
-def RandomCropPatches(im, ref=None, patch_size=32, n_patches=32):
+def RandomCropPatches(image, reference=None, patch_size=32, n_patches=32):
     """
     Random Crop Patches
     :param im: the distorted image
@@ -42,6 +45,11 @@ def RandomCropPatches(im, ref=None, patch_size=32, n_patches=32):
     :param n_patches: numbers of patches (default: 32)
     :return: patches
     """
+    im = Image.fromarray(image, mode='RGB')
+    try:
+      ref = Image.fromarray(reference, mode='RGB')
+    except:
+      ref = None
     w, h = im.size
 
     patches = ()
@@ -61,7 +69,7 @@ def RandomCropPatches(im, ref=None, patch_size=32, n_patches=32):
         return torch.stack(patches)
 
 
-def NonOverlappingCropPatches(im, ref=None, patch_size=32):
+def NonOverlappingCropPatches(image, reference=None, patch_size=32):
     """
     NonOverlapping Crop Patches
     :param im: the distorted image
@@ -69,6 +77,11 @@ def NonOverlappingCropPatches(im, ref=None, patch_size=32):
     :param patch_size: patch size (default: 32)
     :return: patches
     """
+    im = Image.fromarray(image, mode='RGB')
+    try:
+      ref = Image.fromarray(reference, mode='RGB')
+    except:
+      ref = None
     w, h = im.size
 
     patches = ()
