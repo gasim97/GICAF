@@ -223,13 +223,18 @@ class _QuantVGG(nn.Module):
 class VGG19(PyTorchModel):
 
     def __init__(self, bit_width=8):
+        self.bit_width = bit_width
+        self.metadata = {'height': 224, 
+                            'width': 224, 
+                            'channels': 3, 
+                            'bounds': (0, (bit_width**2)-1), 
+                            'bgr': False, 
+                            'classes': 1000, 
+                            'percision': bit_width,
+                            'weight_bits': bit_width,
+                            'activation_bits': bit_width}
         self.vgg19 = _QuantVGG('VGG19', bit_width=bit_width)
         info("Initialized VGG19, run 'model.train(x, y)' to train")
-
-    # get model metadata
-    def metadata(self): 
-        return {'height': 224, 'width': 224, 'channels': 3, 'bgr': False}
-    # returns input height, input width, input channels, (True if BGR else False) in a dictionary
 
     def train(self, x, y):
         info("Training VGG19")
@@ -261,4 +266,5 @@ class VGG19(PyTorchModel):
                         (epoch + 1, i + 1, running_loss / 2000))
                     running_loss = 0.0
         info('Finished training VGG19')
-        super(VGG19, self).__init__(model=self.vgg19)
+        super(VGG19, self).__init__(model=self.vgg19, 
+                                    metadata=self.metadata)

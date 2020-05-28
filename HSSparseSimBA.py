@@ -1,33 +1,32 @@
 from gicaf.interface.AttackInterface import AttackInterface
 import gicaf.Stats as stats
 from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty
+from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty, inf
 from numpy.linalg import norm
 from numpy.random import randint
 from scipy.special import softmax
+from math import ceil
 import time
 from logging import info
 
 class HSSparseSimBA(AttackInterface):
 
-    def __init__(self, size=1, epsilon=64): 
+    def __init__(self, size=1, epsilon=64, query_limit=5000): 
         self.size = size
         self.epsilon = epsilon
+        self.initial_epsilon = epsilon
+        self.query_limit = query_limit
 
-    # runs the attack
-    def run(self, images, model, logger, query_limit=5000, bounds=(0.0, 1.0)): 
+    def run(self, image, model, logger):
         self.model = model
-        self.height = self.model.metadata()['height']
-        self.width = self.model.metadata()['width']
-        self.channels = self.model.metadata()['channels']
+        self.height = self.model.metadata['height']
+        self.width = self.model.metadata['width']
+        self.channels = self.model.metadata['channels']
+        self.bounds = self.model.metadata['bounds']
         self.logger = logger
-        self.bounds = bounds
-        for image in images:
-            self.run_sparse_simba(image, query_limit=query_limit)
-    # returns adversarial images, attack log
 
-    def run_sparse_simba(self, image, query_limit=5000, log_every_n_steps=200):
-        setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size))) #for deep recursion diretion sampling
+        setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*2))) #for deep recursion diretion sampling
+        
         top_preds = self.model.get_top_5(image)
 
         ####
@@ -41,7 +40,12 @@ class HSSparseSimBA(AttackInterface):
         # sum_probs = sum(probs)
         # probs = array(list(map(lambda p: p/sum_probs, probs)))
         softmax_probs = softmax(probs)
-        self.norm = norm(softmax_probs)/norm(softmax_probs[1:])
+        self.norms = [norm(softmax_probs)/(norm(softmax_probs[1:]))]
+        self.ps = [p]
+        count = 0
+        past_qs = []
+        self.done = []
+        self.num_directions = 1
 
         # self.calcHS(image, loss_label)
         
@@ -50,7 +54,7 @@ class HSSparseSimBA(AttackInterface):
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
                         'ssim', 'psnr', 'image', 'top_preds', 'success'])
-        total_calls = 0
+        self.total_calls = 0
         delta = 0
         is_adv = 0
         iteration = 0
@@ -62,7 +66,7 @@ class HSSparseSimBA(AttackInterface):
         psnr = stats.psnr(image, adv, data_range=(self.bounds[1] - self.bounds[0]))
         self.logger.append({
             "iterations": iteration,
-            "total calls": total_calls,
+            "total calls": self.total_calls,
             "epsilon": self.epsilon,
             "size": self.size,
             "is_adv": is_adv,
@@ -73,36 +77,49 @@ class HSSparseSimBA(AttackInterface):
             "success": False,
         })
 
-        start = time.time()
-
-        while ((not is_adv) & (total_calls <= query_limit+5)): #buffer of 5 calls
-            if iteration % log_every_n_steps == 0:
-                print('iteration: {}, new p is: {}, took {:.2f} s'.format(str(iteration), str(p), time.time()-start))
+        while ((not is_adv) & (self.total_calls <= self.query_limit)): #buffer of 5 calls
             iteration += 1    
 
             q, done = self.new_q_direction(done)
 
             delta, p, top_preds, success = self.check_pos(image, delta, q, p, loss_label)
-            total_calls += 1
+            if success:
+                q = -q
+            self.total_calls += 1
+            count +=1
             if not success:
                 delta, p, top_preds, success = self.check_neg(image, delta, q, p, loss_label)
-                total_calls += 1
+                self.total_calls += 1
+                count +=1
 
             #update data on df
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
             ssim = stats.ssim(image, adv, multichannel=True)
             psnr = stats.psnr(image, adv, data_range=(self.bounds[1] - self.bounds[0]))
 
+            if success:
+                count = 0
+                past_qs.append(q)
+                self.epsilon = self.initial_epsilon
+            else:
+                if count == 4:
+                    self.epsilon = self.initial_epsilon + 3 * (self.size * (self.bounds[1] - self.bounds[0]))/255
+                if count % 50 == 0 and len(past_qs) > 0:
+                    last_q, past_qs = past_qs[-1], past_qs[:-1]
+                    delta = delta + self.epsilon * last_q
+                    self.ps = self.ps[:-1]
+                    self.norms = self.norms[:-1]
+
             if iteration % 100 == 0: #only save image and probs every 100 steps, to save memory space
                 image_save = adv
                 preds_save = top_preds
             else:
                 image_save = None
-                preds_save = top_preds
+                preds_save = None
                 
             self.logger.append({
                 "iterations": iteration,
-                "total calls": total_calls,
+                "total calls": self.total_calls,
                 "epsilon": self.epsilon,
                 "size": self.size,
                 "is_adv": is_adv,
@@ -118,7 +135,7 @@ class HSSparseSimBA(AttackInterface):
                 is_adv = 1
                 self.logger.append({
                     "iterations": iteration,
-                    "total calls": total_calls,
+                    "total calls": self.total_calls,
                     "epsilon": self.epsilon,
                     "size": self.size,
                     "is_adv": is_adv,
@@ -128,9 +145,9 @@ class HSSparseSimBA(AttackInterface):
                     "top_preds": top_preds,
                     "success": success,
                 }) 
-                return adv, total_calls #remove this to continue attack even after adversarial is found
+                return adv #remove this to continue attack even after adversarial is found
                 
-        return adv, total_calls
+        return None
 
     # def hessian(self, x):
     #     """
@@ -211,12 +228,17 @@ class HSSparseSimBA(AttackInterface):
         pos_x = x + delta + self.epsilon * q
         pos_x = clip(pos_x, self.bounds[0], self.bounds[1])
         top_5_preds = self.model.get_top_5(pos_x)
+        if self.model.metadata['activation_bits'] <= 8:
+            top_5_preds = self.adjust_preds(top_5_preds)
         
-        probs = array(list(map(lambda p: p[1], top_5_preds)))
+        # probs = array(list(map(lambda p: p[1], top_5_preds)))
         # sum_probs = sum(probs)
         # probs = array(list(map(lambda p: p/sum_probs, probs)))
-        softmax_probs = softmax(probs)
-        norm_test = norm(softmax_probs)/norm(softmax_probs[1:])
+        # softmax_probs = softmax(probs)
+        # if norm(softmax_probs[1:]) == 0:
+        #     norm_test = inf
+        # else:
+        #     norm_test = norm(softmax_probs)/(norm(softmax_probs[1:]))
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
         if len(idx) == 0:
@@ -226,24 +248,30 @@ class HSSparseSimBA(AttackInterface):
             return delta, p, top_5_preds, success
         idx = idx[0][0]
         p_test = top_5_preds[idx][1]
-        if (p_test < p and norm_test < self.norm) or idx != 0:
+        if p_test < self.ps[-1] or idx != 0:
             delta = delta + self.epsilon*q #add new perturbation to total perturbation
-            p = p_test #update new p
-            self.norm = norm_test
+            self.ps.append(p_test) #update new p
+            # self.norms.append(norm_test)
             success = True
         return delta, p, top_5_preds, success
 
     def check_neg(self, x, delta, q, p, loss_label):
         success = False #initialise as False by default
         neg_x = x + delta - self.epsilon * q
+        # neg_x = self.adjust_pertubation(neg_x, q_indicies)
         neg_x = clip(neg_x, self.bounds[0], self.bounds[1])
         top_5_preds = self.model.get_top_5(neg_x)
+        if self.model.metadata['activation_bits'] <= 8:
+            top_5_preds = self.adjust_preds(top_5_preds)
         
-        probs = array(list(map(lambda p: p[1], top_5_preds)))
+        # probs = array(list(map(lambda p: p[1], top_5_preds)))
         # sum_probs = sum(probs)
         # probs = array(list(map(lambda p: p/sum_probs, probs)))
-        softmax_probs = softmax(probs)
-        norm_test = norm(softmax_probs)/norm(softmax_probs[1:])
+        # softmax_probs = softmax(probs)
+        # if norm(softmax_probs[1:]) == 0:
+        #     norm_test = inf
+        # else:
+        #     norm_test = norm(softmax_probs)/(norm(softmax_probs[1:]))
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
         if len(idx) == 0:
@@ -253,10 +281,10 @@ class HSSparseSimBA(AttackInterface):
             return delta, p, top_5_preds, success
         idx = idx[0][0]
         p_test = top_5_preds[idx][1]
-        if (p_test < p and norm_test < self.norm) or idx != 0:
+        if p_test < self.ps[-1] or idx != 0:
             delta = delta - self.epsilon*q #add new perturbation to total perturbation
-            p = p_test #update new p 
-            self.norm = norm_test
+            self.ps.append(p_test) #update new p 
+            # self.norms.append(norm_test)
             success = True
         return delta, p, top_5_preds, success
 
@@ -265,11 +293,10 @@ class HSSparseSimBA(AttackInterface):
         return top_1_label != original_label
 
     def new_q_direction(self, done):
-        [a,b,c] = self.sample_nums(done)
-        done.append([a,b,c])
-        if len(done) >= self.height*self.width*self.channels/self.size/self.size-2:
-            done = [] #empty it before it hits recursion limit
-        q = self.q_direction(a, b, c)
+        q_indicies = self.sample_nums(done)
+        q = zeros((self.height, self.width, self.channels))
+        for [a, b, c] in q_indicies:
+            q = q + self.q_direction(a, b, c)
         return q, done
 
     def q_direction(self, a, b, c):
@@ -280,11 +307,29 @@ class HSSparseSimBA(AttackInterface):
         q = q/norm(q)
         return q
 
+    def adjust_preds(self, preds):
+        probs = list(map(lambda x: round(x[1], 5), preds))
+        preds = list(map(lambda x: x[0], preds))
+        return array(list(map(lambda x: array(x), zip(preds, probs))))
+
     def sample_nums(self, done):
         #samples new pixels without replacement
+        indicies = []
+        for _ in range(self.num_directions):
+            [a, b, c] = self.sample_nums_rec()
+            self.done.append([a, b, c])
+            indicies.append([a, b, c])
+            if len(self.done) >= self.height*self.width*self.channels/self.size/self.size-2:
+                self.done = [] #empty it before it hits recursion limit
+        return indicies
+
+    def sample_nums_rec(self):
         [a,b] = randint(0, high=self.height/self.size, size=2)
         c = randint(0, high=self.channels, size=1)[0]
-        if [a,b,c] in done:
+        if [a,b,c] in self.done:
             #sample again (recursion)
-            [a,b,c] = self.sample_nums(done)
+            [a,b,c] = self.sample_nums_rec()
         return [a,b,c]
+
+    def close(self):
+        pass

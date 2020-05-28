@@ -6,18 +6,45 @@ class AttackInterface:
     @classmethod
     def version(cls): return "1.0"
 
-    # initialize
     @abstractmethod
-    def __init__(self): 
+    def __init__(self, attack_parameters=None): 
+        """
+        Initialize attack
+
+        Parameters
+        ----------
+            attack_parameters : dict
+                A dictionary containing attack parameters. Default is None. As
+                such Attack modules must have default parameter values
+        """
         raise NotImplementedError("Attack module __init__() function missing")
 
-    # runs the attack
     @abstractmethod
-    def run(self, images, model, logger, query_limit=5000): 
-        raise NotImplementedError("Attack module run() function missing")
-    # returns attack log
+    def run(self, image, model, logger, memory_logger, query_limit=5000): 
+        """
+        Runs the attack
 
-    # end of session clean up
+        Parameters
+        ----------
+            image : numpy.ndarray
+                Image to carry out attack on
+            model : ModelInterface
+                The model to attack wrapped in an instance of ModelInterface
+            logger: LoggerInterface
+                A logger to log experimental data
+            query_limit : int
+                The maximum number of model queries allowable to achieve a
+                successful attack. The default is 5000
+        Returns
+        -------
+            adv : numpy.ndarray or None
+                Adversarial image if successful, or None otherwise
+        """
+        raise NotImplementedError("Attack module run() function missing")
+
     @abstractmethod
     def close(self): 
-        pass
+        """
+        End of session clean up
+        """
+        raise NotImplementedError("Attack module close() function missing")

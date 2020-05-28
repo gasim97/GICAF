@@ -7,58 +7,133 @@ class LoadDataInterface:
     @classmethod
     def version(cls): return "1.0"
 
-    # initialize paths
     @abstractmethod
-    def __init__(self, ground_truth_file_path, img_folder_path): 
+    def __init__(self, ground_truth_file_path="", img_folder_path=""): 
+        """
+        Initialize data loader and data paths
+
+        Parameters
+        ----------
+            ground_truth_file_path : string
+                The absolute path to a file containing the file names of the images
+                to be loaded and the associated ground-truths. The file should be a text
+                file. The image file names and the ground-truths should be separated by 
+                a space and listed line by line, as below.
+                File structure:
+                    image_file_name ground_truth
+                    image_file_name ground_truth
+                    ...
+            img_folder_path: sting
+                The absolute path to the folder/directory containing the images to be
+                loaded.
+        """
         raise NotImplementedError("Loading module __init__() function missing")
 
-    # get images and ground truths
     @abstractmethod
     def get_data(self, index_ranges, height, width): 
         """
-        index_ranges: array of tuples specifying the indicies of the data to load, each contains (start index, end index) both inclusive
-        height: model input height
-        width: model input width
+        Get images and ground truths
+
+        Parameters
+        ----------
+            index_ranges : list of 2-tuples with elements of type int
+                Specifies the indicies of the data to load, each tuple contains 
+                (start index, end index) both inclusive
+            height: int
+                Model input height
+            width: int
+                Model input width
+        Returns
+        -------
+            images : numpy.ndarray
+                Loaded images
+            ground truths : numpy.ndarray
+                The ground truths of the loaded images
         """
         raise NotImplementedError("Loading module get_data() function missing")
-    # returns [images], [ground truths]
 
-    # get bgr images and ground truths
     @abstractmethod
     def get_data_bgr(self, index_ranges, height, width): 
         """
-        index_ranges: array of tuples specifying the indicies of the data to load, each contains (start index, end index) both inclusive
-        height: model input height
-        width: model input width
+        Get BGR images and ground truths
+
+        Parameters
+        ----------
+            index_ranges : list of 2-tuples with elements of type int
+                Specifies the indicies of the data to load (lines to read in the 
+                ground-truths file), each tuple contains (start index, end index) 
+                both inclusive
+            height: int
+                Model input height
+            width: int
+                Model input width
+        Returns
+        -------
+            images : numpy.ndarray
+                Loaded images in BGR format
+            ground truths: numpy.ndarray
+                The ground truths of the loaded images
         """
         raise NotImplementedError("Loading module get_data_bgr() function missing")
-    # returns [images], [ground truths]
 
-    # # loads images (jpg files) and ground truths (txt file)
-    # @abstractmethod
-    # def load_data(self): 
-    #     print("Loading module load_data function missing") 
-    #     raise NotImplementedError
+    @abstractmethod
+    def save(self, x, y, name): 
+        """
+        Save preprocessed input data
 
-    # # saves preprocessed x_val and y_val binaries
-    # @abstractmethod
-    # def save_binary(self): 
-    #     print("Loading module save_binary function missing") 
-    #     raise NotImplementedError
+        Parameters
+        ----------
+            x : numpy.ndarray
+                Images
+            y: numpy.ndarray
+                Ground-truths
+            name : string
+                Output file name
+        """
+        raise NotImplementedError("Loading module save function missing") 
 
-    # # load preprocessed x_val and y_val binaries
-    # @abstractmethod
-    # def load_binary(self): 
-    #     print("Loading module load_binary function missing") 
-    #     raise NotImplementedError
+    @abstractmethod
+    def load(self, name): 
+        """
+        Load saved preprocessed input data
 
-    # get a list of indicies unpacked from the index ranges
+        Parameters
+        ----------
+            name : string
+                Input file name
+        Returns
+        -------
+            images : numpy.ndarray
+                Loaded images in BGR format
+            ground truths: numpy.ndarray
+                The ground truths of the loaded images
+        """
+        raise NotImplementedError("Loading module load function missing") 
+
     def get_sorted_indicies_list(self, index_ranges):
+        """
+        Get a list of indicies unpacked from the index ranges
+
+        Parameters
+        ----------
+            index_ranges : list of 2-tuples with elements of type int
+                List of tuples each containing (start index, end index)
+        Returns
+        -------
+            indicies : list
+                List of indicies unpacked from index_ranges
+        Example
+        -------
+            For input index_ranges = [(1, 3), (9, 11), (5, 7), (6, 7)]
+            returns indicies = [1, 2, 3, 5, 6, 7, 9, 10, 11]
+        """
         indicies = [val for sublist in array(list(map(lambda x: arange(x[0], x[1] + 1), index_ranges))) for val in sublist] # unpack the index ranges to a list of indicies
         indicies = sorted(list(dict.fromkeys(indicies))) # remove duplicate indicies, incase inputed index ranges overlap, and sort
         return indicies
 
-    # end of session clean up
     @abstractmethod
     def close(self): 
+        """
+        End of session clean up
+        """
         raise NotImplementedError("Loading module close() function missing")

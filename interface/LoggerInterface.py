@@ -33,6 +33,14 @@ class LoggerInterface:
         raise NotImplementedError("Logger module get_all() function missing")
     # returns all logs
 
+    @abstractmethod
+    def save(self):
+        raise NotImplementedError("Logger module save() function missing")
+
+    @abstractmethod
+    def load(self, experiment_id):
+        raise NotImplementedError("Logger module load() function missing")
+
     # end of session clean up
     @abstractmethod
     def close(self):

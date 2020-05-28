@@ -13,7 +13,7 @@ class AttackEngineInterface:
 
     # runs the attack
     @abstractmethod
-    def run(self): 
+    def run(self, use_memory=False): 
         raise NotImplementedError("AttackEngine module run() function missing")
     # returns adversarial image, attack log
 

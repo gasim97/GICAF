@@ -3,16 +3,16 @@ from gicaf.Logger import Logger
 from numpy import array
 from logging import info
 
-# TODO: Allow memory for samples of the same class
-
 class AttackEngine(AttackEngineInterface):
 
-    def __init__(self, x, y, model, attacks): 
+    def __init__(self, x, y, model, attacks, save=True): 
         self.x = x
         self.y = y
         self.model = model
         self.attacks = attacks
         self.loggers = []
+        self.memory = {}
+        self.save = save
         self._filter_wrong_predictions()
 
     def _filter_wrong_predictions(self):
@@ -22,17 +22,28 @@ class AttackEngine(AttackEngineInterface):
         self.x = array(list(map(lambda i: self.x[i], correct_pred_indicies)))
         self.y = array(list(map(lambda i: self.y[i], correct_pred_indicies)))
 
-    # runs the attack
-    def run(self): 
+    def run(self, use_memory=False): 
         for attack in self.attacks:
             self.loggers.append(Logger())
-            attack.run(self.x, self.model, self.loggers[-1])
-    # returns adversarial image, attack log
+            self.memory = {}
+            for i, image in enumerate(self.x):
+                if use_memory:
+                    try:
+                        image = image + self.memory[str(self.y[i])]
+                    except KeyError:
+                        pass
+                adv = attack.run(image, self.model, self.loggers[-1])
+                if use_memory:
+                    self.memory[str(self.y[i])] = adv - image
+        return self.loggers
 
     def get_logs(self):
         return self.loggers
 
     # end of session clean up
-    def close(self): 
-        for logger in self.loggers:
-            logger.close()
+    def close(self):
+        for attack in self.attacks:
+            attack.close() 
+        if self.save:
+            for logger in self.loggers:
+                logger.close()

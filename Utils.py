@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow_hub as hub
+import tensorflow.lite as lite
 from numpy import array
 from logging import info
 from pathlib import Path
@@ -71,7 +72,12 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
         model.compile()
         tfhub_models_dir = save_tfhub_model(model, model_name)
     tflite_model_file = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
-    return tflite_model_file
+    if (bit_width != 32):
+        weight_bits = 8
+    else:
+        weight_bits = bit_width
+    activation_bits = bit_width
+    return lite.Interpreter(model_path=str(tflite_model_file)), weight_bits, activation_bits
 
 # Google Drive helper functions
 

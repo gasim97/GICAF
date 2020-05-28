@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from numpy import array, arange, flip, expand_dims, float32
-from foolbox.models import KerasModel
 import tensorflow.lite as lite
 from copy import deepcopy
 
@@ -12,103 +11,182 @@ class ModelInterface:
 
     # initialize
     @abstractmethod
-    def __init__(self): 
+    def __init__(self, model, metadata): 
+        """
+        Initialize model
+
+        Parameters
+        ----------
+            model : Any
+                A model of the type expected by the inheriting class
+            metadata: dict
+                Contains the following fields
+                    'height' : int
+                        Input height
+                    'width' : int
+                        Input width
+                    'channels' : int
+                        Input number of channels
+                    'bounds' : 2-tuple with elements of type int
+                        Contains (min, max) of input values
+                    'bgr' : bool
+                        True if input is to be loaded in BGR format, and False if RGB or otherwise
+                    'classes': int
+                        Number of output classes
+                    'weight_bits': int
+                        Model weights bit width
+                    'activation_bits': int
+                        Model activations bit width
+                    
+        """
         raise NotImplementedError("Model module __init__() function missing")
 
-    # get model metadata
-    @abstractmethod
-    def metadata(self): 
-        raise NotImplementedError("Model module get_model_meta() function missing")
-    # returns input height, input width, input channels, (True if BGR else False)
-
-    # run inference
     @abstractmethod
     def get_preds(self, image):
-        raise NotImplementedError("Model module v() function missing")
-    # returns [[label, probability]] -> shape = (number of classes, 2), type: numpy.ndarray
+        """
+        Run inference
 
-    # run inference on batch
+        Parameters
+        ----------
+            image : numpy.ndarray
+                Image
+        Returns
+        -------
+            [[label, probability]] : numpy.ndarray -> shape = (number of classes, 2)
+                The output indicies zipped with the predictions
+        """
+        raise NotImplementedError("Model module get_preds() function missing")
+
     @abstractmethod
     def get_preds_batch(self, images): 
+        """
+        Run inference on batch
+
+        Parameters
+        ----------
+            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+                Images
+        Returns
+        -------
+            [[[label, probability]]] : numpy.ndarray -> shape = (batch size, number of classes, 2)
+                The output indicies zipped with the predictions
+        """
         raise NotImplementedError("Model module get_preds_batch() function missing")
-    # returns [[[label, probability]]] -> shape = (batch size, number of classes, 2), type: numpy.ndarray
 
-    # run inference and return top 1
-    @abstractmethod
-    def get_top_1(self, image): 
-        raise NotImplementedError("Model module get_top_1() function missing")
-    # returns [label, probability] -> shape = (2,), type: numpy.ndarray
-
-    # run inference on batch and return top 1
-    @abstractmethod
-    def get_top_1_batch(self, images): 
-        raise NotImplementedError("Model module get_top_1_batch() function missing")
-    # returns [[label, probability]] -> shape = (batch size, 2), type: numpy.ndarray
-
-    # run inference and return top 5 ORDERED HIGHEST TO LOWEST
-    @abstractmethod
-    def get_top_5(self, image): 
-        raise NotImplementedError("Model module get_top_5() function missing")
-    # returns [[label, probability]] -> shape = (5, 2), type: numpy.ndarray
-
-    # run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
-    @abstractmethod
-    def get_top_5_batch(self, images): 
-        raise NotImplementedError("Model module get_top_5_batch() function missing")
-    # returns [[[label, probability]]] -> shape = (batch size, 5, 2), type: numpy.ndarray
-
-    # end of session clean up
     @abstractmethod
     def close(self):
+        """
+        End of session clean up
+        """
         pass
 
+    def get_top_1(self, image): 
+        """
+        Run inference and return top 1
+
+        Parameters
+        ----------
+            image : numpy.ndarray
+                Image
+        Returns
+        -------
+            label : int
+                The output index corresponding to the highest prediction
+            probability : float
+                The highest output probability/value
+        """
+        preds = self.get_preds(image)
+        return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then extract the last entry (highest probability with label)
+
+    def get_top_1_batch(self, images): 
+        """
+        Run inference on batch and return top 1
+
+        Parameters
+        ----------
+            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+                Images
+        Returns
+        -------
+            [[label, probability]] : numpy.ndarray -> shape = (batch size, 2)
+                The output indicies corresponding to the highest predictions
+                for each image zipped with the predictions
+        """
+        preds = self.get_preds_batch(images)
+        return array(list(map(lambda x: x[x[:, 1].argsort()][-1], preds)))
+
+    def get_top_5(self, image): 
+        """
+        Run inference and return top 5 ORDERED HIGHEST TO LOWEST
+
+        Parameters
+        ----------
+            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+                Images
+        Returns
+        -------
+            [[label, probability]]  : numpy.ndarray -> shape = (5, 2)
+                The output indicies corresponding to the highest 5 predictions
+                zipped with the predictions
+        """
+        preds = self.get_preds(image)
+        return flip(preds[preds[:, 1].argsort()][-5:], 0) # sort predictions by probability, then extract the last 5 entries (highest probabilities with labels) and flip to sort by descending probability
+
+    def get_top_5_batch(self, images): 
+        """
+        Run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
+
+        Parameters
+        ----------
+            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+                Images
+        Returns
+        -------
+            [[[label, probability]]] : numpy.ndarray -> shape = (batch size, 5, 2)
+                The output indicies corresponding to the highest 5 predictions
+                for each image zipped with the predictions
+        """
+        preds = self.get_preds_batch(images)
+        return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
+
     def zip_labels_to_probs(self, probs):
+        """
+        Zips the predictions with their indicies for convenience
+
+        Parameters
+        ----------
+            probs : numpy.ndarray or list
+                Predictions
+        Returns
+        -------
+            [[label, probability]] : numpy.ndarray -> shape = (number of classes, 2)
+                The predictions zipped with their indicies
+        """
         return array(list(zip(arange(len(probs)), probs)))
 
-class FoolboxKerasModelInterface(ModelInterface):
+class KerasModel(ModelInterface):
 
     # initialize
-    def __init__(self, kmodel, preprocessing=(0, 1)): 
+    def __init__(self, kmodel, metadata): 
         #sets up local model, to use for local testing
-        self.model = KerasModel(kmodel, bounds=(0, 255), preprocessing=preprocessing, predicts='logits')
+        self.metadata = metadata
+        self.model = kmodel
 
     # run inference
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.model.predictions(image))
+        return self.zip_labels_to_probs(self.model.predict(image))
 
     # run inference on batch
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model.batch_predictions(images))))
+        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model.predict(images))))
 
-    # run inference and return top 1
-    def get_top_1(self, image): 
-        preds = self.get_preds(image)
-        return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then extract the last entry (highest probability with label)
-    # returns [label, probability]
-
-    # run inference on batch and return top 1
-    def get_top_1_batch(self, images): 
-        preds = self.get_preds_batch(images)
-        return array(list(map(lambda x: x[x[:, 1].argsort()][-1], preds)))
-    # returns [[label, probability]]
-
-    # run inference and return top 5 ORDERED HIGHEST TO LOWEST
-    def get_top_5(self, image): 
-        preds = self.get_preds(image)
-        return flip(preds[preds[:, 1].argsort()][-5:], 0) # sort predictions by probability, then extract the last 5 entries (highest probabilities with labels) and flip to sort by descending probability
-    # returns [[label, probability]] 
-
-    # run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
-    def get_top_5_batch(self, images): 
-        preds = self.get_preds_batch(images)
-        return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
-    # returns [[[label, probability]]]
 
 class TfLiteModel(ModelInterface):
     # initialize
-    def __init__(self, tflite_model_file_path): 
+    def __init__(self, interpreter, metadata): 
         #sets up local model, to use for local testing
-        self.interpreter = lite.Interpreter(model_path=str(tflite_model_file_path))
+        self.metadata = metadata
+        self.interpreter = interpreter
         self.interpreter.allocate_tensors()
         self.input_index = self.interpreter.get_input_details()[0]["index"]
         self.output_index = self.interpreter.get_output_details()[0]["index"]
@@ -133,35 +211,15 @@ class TfLiteModel(ModelInterface):
     def get_preds_batch(self, images): 
         return array(list(map(lambda img: self.zip_labels_to_probs(self._evaluate(img)), images)))
 
-    # run inference and return top 1
-    def get_top_1(self, image): 
-        preds = self.get_preds(image)
-        return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then extract the last entry (highest probability with label)
-    # returns [label, probability]
+    # def foolboxModelWrapper(self):
 
-    # run inference on batch and return top 1
-    def get_top_1_batch(self, images): 
-        preds = self.get_preds_batch(images)
-        return array(list(map(lambda x: x[x[:, 1].argsort()][-1], preds)))
-    # returns [[label, probability]]
-
-    # run inference and return top 5 ORDERED HIGHEST TO LOWEST
-    def get_top_5(self, image): 
-        preds = self.get_preds(image)
-        return flip(preds[preds[:, 1].argsort()][-5:], 0) # sort predictions by probability, then extract the last 5 entries (highest probabilities with labels) and flip to sort by descending probability
-    # returns [[label, probability]] 
-
-    # run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
-    def get_top_5_batch(self, images): 
-        preds = self.get_preds_batch(images)
-        return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
-    # returns [[[label, probability]]]
 
 class PyTorchModel(ModelInterface):
 
     # initialize
     @abstractmethod
-    def __init__(self, model): 
+    def __init__(self, model, metadata): 
+        self.metadata = metadata
         self.model = model
         self.model.eval()
 
@@ -172,27 +230,3 @@ class PyTorchModel(ModelInterface):
     # run inference on batch
     def get_preds_batch(self, images): 
         return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model(images).detach().numpy())))
-
-    # run inference and return top 1
-    def get_top_1(self, image): 
-        preds = self.get_preds(image)
-        return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then extract the last entry (highest probability with label)
-    # returns [label, probability]
-
-    # run inference on batch and return top 1
-    def get_top_1_batch(self, images): 
-        preds = self.get_preds_batch(images)
-        return array(list(map(lambda x: x[x[:, 1].argsort()][-1], preds)))
-    # returns [[label, probability]]
-
-    # run inference and return top 5 ORDERED HIGHEST TO LOWEST
-    def get_top_5(self, image): 
-        preds = self.get_preds(image)
-        return flip(preds[preds[:, 1].argsort()][-5:], 0) # sort predictions by probability, then extract the last 5 entries (highest probabilities with labels) and flip to sort by descending probability
-    # returns [[label, probability]] 
-
-    # run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
-    def get_top_5_batch(self, images): 
-        preds = self.get_preds_batch(images)
-        return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
-    # returns [[[label, probability]]]

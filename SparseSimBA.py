@@ -9,24 +9,21 @@ from logging import info
 
 class SparseSimBA(AttackInterface):
 
-    def __init__(self, size=1, epsilon=64): 
+    def __init__(self, size=1, epsilon=64, query_limit=5000): 
         self.size = size
         self.epsilon = epsilon
+        self.query_limit = query_limit
 
-    # runs the attack
-    def run(self, images, model, logger, query_limit=5000, bounds=(0.0, 1.0)): 
+    def run(self, image, model, logger):
         self.model = model
-        self.height = self.model.metadata()['height']
-        self.width = self.model.metadata()['width']
-        self.channels = self.model.metadata()['channels']
+        self.height = self.model.metadata['height']
+        self.width = self.model.metadata['width']
+        self.channels = self.model.metadata['channels']
+        self.bounds = self.model.metadata['bounds']
         self.logger = logger
-        self.bounds = bounds
-        for image in images:
-            self.run_sparse_simba(image, query_limit=query_limit)
-    # returns adversarial images, attack log
 
-    def run_sparse_simba(self, image, query_limit=5000, log_every_n_steps=200):
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size))) #for deep recursion diretion sampling
+
         top_preds = self.model.get_top_5(image)
 
         ####
@@ -56,11 +53,7 @@ class SparseSimBA(AttackInterface):
             "top_preds": top_preds
         })
 
-        start = time.time()
-
-        while ((not is_adv) & (total_calls <= query_limit+5)): #buffer of 5 calls
-            if iteration % log_every_n_steps == 0:
-                print('iteration: {}, new p is: {}, took {:.2f} s'.format(str(iteration), str(p), time.time()-start))
+        while ((not is_adv) & (total_calls <= self.query_limit)):
             iteration += 1    
 
             q, done = self.new_q_direction(done)
@@ -109,9 +102,9 @@ class SparseSimBA(AttackInterface):
                     "image": adv,
                     "top_preds": top_preds
                 }) 
-                return adv, total_calls #remove this to continue attack even after adversarial is found
+                return adv #remove this to continue attack even after adversarial is found
                 
-        return adv, total_calls
+        return None
 
     def check_pos(self, x, delta, q, p, loss_label):
         success = False #initialise as False by default
@@ -173,3 +166,6 @@ class SparseSimBA(AttackInterface):
             #sample again (recursion)
             [a,b,c] = self.sample_nums(done)
         return [a,b,c]
+
+    def close(self):
+        pass
