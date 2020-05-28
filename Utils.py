@@ -58,10 +58,16 @@ def save_tfhub_model(model, model_name):
     return tfhub_models_dir
 
 def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], bit_width=8):
+    if (bit_width != 32):
+        weight_bits = 8
+    else:
+        weight_bits = bit_width
+    activation_bits = bit_width
     tflite_model_file = _tflite_model_file(model_name, bit_width)
     if (tflite_model_file.exists()):
         info("Using saved tflite model at " + str(tflite_model_file))
-        return tflite_model_file
+        interpreter = lite.Interpreter(model_path=str(tflite_model_file))
+        return interpreter, weight_bits, activation_bits
     tfhub_models_dir = _tfhub_model_dir(model_name, create_dir=False)
     if (tfhub_models_dir.is_dir()):
         info("Using saved tfhub model at " + str(tfhub_models_dir))
@@ -73,11 +79,6 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
         tfhub_models_dir = save_tfhub_model(model, model_name)
     tflite_model_file = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
     interpreter = lite.Interpreter(model_path=str(tflite_model_file))
-    if (bit_width != 32):
-        weight_bits = 8
-    else:
-        weight_bits = bit_width
-    activation_bits = bit_width
     return interpreter, weight_bits, activation_bits
 
 # Google Drive helper functions
