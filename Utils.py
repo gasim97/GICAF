@@ -72,12 +72,13 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
         model.compile()
         tfhub_models_dir = save_tfhub_model(model, model_name)
     tflite_model_file = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
+    interpreter = lite.Interpreter(model_path=str(tflite_model_file))
     if (bit_width != 32):
         weight_bits = 8
     else:
         weight_bits = bit_width
     activation_bits = bit_width
-    return lite.Interpreter(model_path=str(tflite_model_file)), weight_bits, activation_bits
+    return interpreter, weight_bits, activation_bits
 
 # Google Drive helper functions
 
@@ -109,7 +110,7 @@ def _get_gdrive_file_metadata(file_name):
     for file_ in file_list:
         if file_['title'] == file_name:
             return file_
-    return None
+    raise NameError("Failed to find '" + file_name + "' on Google Drive, enure that the tmp folder has been saved before and the correct file name is being used")
 
 def _save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp'):
     gdrive_file_name = gdrive_file_name + ".zip"
@@ -136,9 +137,6 @@ def load_tmp_from_gdrive(gdrive_file_name='gicaf_tmp'):
     gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     download = drive.CreateFile({'id': _get_gdrive_file_metadata(gdrive_file_name)['id']})
-    if (download == None):
-        info("Failed to find '" + gdrive_file_name + "' on Google Drive, enure that the tmp folder has been saved before and the correct file name is being used")
-        return
     download.GetContentFile('gicaf/tmp.zip')
     _unzip_file()
     _remove_file()
