@@ -40,10 +40,9 @@ class AttackEngine(AttackEngineInterface):
     def get_logs(self):
         return self.loggers
 
-    # end of session clean up
     def close(self):
-        for attack in self.attacks:
-            attack.close() 
         if self.save:
+            for attack in self.attacks:
+                attack.close() 
             for logger in self.loggers:
                 logger.close()

@@ -2,23 +2,12 @@
 PyTorch 1.1 implementation of the following paper:
 Bosse S, Maniry D, Müller K R, et al. Deep neural networks for no-reference and full-reference image quality assessment.
 IEEE Transactions on Image Processing, 2018, 27(1): 206-219.
- Requirements: See requirements.txt.
-    ```bash
-    pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-    ```
- Usage:
-    Start tensorboard:
-    ```bash
-    tensorboard --logdir=tensorboard_logs --port=6006
-    ```
-    Run the main.py:
-    ```bash
-    CUDA_VISIBLE_DEVICES=0 python main.py --exp_id=0
-    ```
-    for more arguments, execute `python main.py --help`
- Implemented by Dingquan Li
- Email: dingquanli@pku.edu.cn
- Date: 2019/9/9
+    Implemented by Dingquan Li
+    Email: dingquanli@pku.edu.cn
+    Date: 09/09/2019
+------
+Sourced and adapted from: https://github.com/lidq92/WaDIQaM
+Obtained: 29/05/2020
 """
 
 import torch

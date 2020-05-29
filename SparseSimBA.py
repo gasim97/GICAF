@@ -39,8 +39,8 @@ class SparseSimBA(AttackInterface):
         
         #save step 0 in df
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
-        ssim = stats.ssim(image, adv, multichannel=True)
-        psnr = stats.psnr(image, adv, data_range=(self.bounds[1] - self.bounds[0]))
+        ssim = stats.ssim(image, adv, self.model.metadata)
+        psnr = stats.psnr(image, adv, self.model.metadata)
         self.logger.append({
             "iterations": iteration,
             "total calls": total_calls,
@@ -66,8 +66,8 @@ class SparseSimBA(AttackInterface):
 
             #update data on df
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
-            ssim = stats.ssim(image, adv, multichannel=True)
-            psnr = stats.psnr(image, adv, data_range=(self.bounds[1] - self.bounds[0]))
+            ssim = stats.ssim(image, adv, self.model.metadata)
+            psnr = stats.psnr(image, adv, self.model.metadata)
 
             if iteration % 100 == 0: #only save image and probs every 100 steps, to save memory space
                 image_save = adv

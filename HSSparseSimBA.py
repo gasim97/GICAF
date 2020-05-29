@@ -62,8 +62,8 @@ class HSSparseSimBA(AttackInterface):
         
         #save step 0 in df
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
-        ssim = stats.ssim(image, adv, multichannel=True)
-        psnr = stats.psnr(image, adv, data_range=(self.bounds[1] - self.bounds[0]))
+        ssim = stats.ssim(image, adv, self.model.metadata)
+        psnr = stats.psnr(image, adv, self.model.metadata)
         self.logger.append({
             "iterations": iteration,
             "total calls": self.total_calls,
@@ -94,8 +94,8 @@ class HSSparseSimBA(AttackInterface):
 
             #update data on df
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
-            ssim = stats.ssim(image, adv, multichannel=True)
-            psnr = stats.psnr(image, adv, data_range=(self.bounds[1] - self.bounds[0]))
+            ssim = stats.ssim(image, adv, self.model.metadata)
+            psnr = stats.psnr(image, adv, self.model.metadata)
 
             if success:
                 count = 0

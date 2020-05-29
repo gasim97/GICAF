@@ -9,7 +9,6 @@ class ModelInterface:
     @classmethod
     def version(cls): return "1.0"
 
-    # initialize
     @abstractmethod
     def __init__(self, model, metadata): 
         """
@@ -166,24 +165,19 @@ class ModelInterface:
 
 class KerasModel(ModelInterface):
 
-    # initialize
     def __init__(self, kmodel, metadata): 
-        #sets up local model, to use for local testing
         self.metadata = metadata
         self.model = kmodel
 
-    # run inference
     def get_preds(self, image):
         return self.zip_labels_to_probs(self.model.predict(image))
 
-    # run inference on batch
     def get_preds_batch(self, images): 
         return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model.predict(images))))
 
 class TfLiteModel(ModelInterface):
-    # initialize
+
     def __init__(self, interpreter, metadata): 
-        #sets up local model, to use for local testing
         self.metadata = metadata
         self.interpreter = interpreter
         self.interpreter.allocate_tensors()
@@ -202,27 +196,21 @@ class TfLiteModel(ModelInterface):
         output = self.interpreter.tensor(self.output_index)
         return deepcopy(output()[0])
 
-    # run inference
     def get_preds(self, image):
         return self.zip_labels_to_probs(self._evaluate(image))
 
-    # run inference on batch
     def get_preds_batch(self, images): 
         return array(list(map(lambda img: self.zip_labels_to_probs(self._evaluate(img)), images)))
 
 class PyTorchModel(ModelInterface):
 
-    # initialize
-    @abstractmethod
     def __init__(self, model, metadata): 
         self.metadata = metadata
         self.model = model
         self.model.eval()
 
-    # run inference
     def get_preds(self, image):
         return self.zip_labels_to_probs(self.model([image]).detach().numpy()[0])
 
-    # run inference on batch
     def get_preds_batch(self, images): 
         return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model(images).detach().numpy())))
