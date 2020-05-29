@@ -6,18 +6,57 @@ class AttackEngineInterface:
     @classmethod
     def version(cls): return "1.0"
 
-    # initialize
     @abstractmethod
     def __init__(self, x, y, model, attacks): 
+        """
+        Initialize attack engine
+
+        Parameters
+        ----------
+            x : numpy.ndarray -> shape = (batch size, height, width, channels)
+                Image(s) to use for attacks
+            y : numpy.ndarray -> shape = (batch size, 1)
+                Ground-truths of x 
+            model : ModelInterface
+                Model to carry out attacks on
+            attacks : list with elements of type AttackInterface
+                Attacks to carry out
+        """
         raise NotImplementedError("AttackEngine module __init__() function missing")
 
-    # runs the attack
     @abstractmethod
     def run(self, use_memory=False): 
-        raise NotImplementedError("AttackEngine module run() function missing")
-    # returns adversarial image, attack log
+        """
+        Runs the attack
 
-    # end of session clean up
+        Parameters
+        ----------
+            use_memory : bool
+                Indicates whether or not to transfer knowledge from successful
+                attacks to subsequent images of the same class. Memory is not to
+                be transfered between different attack methods
+        Returns
+        -------
+            logs : list with elements of type LoggerInterface
+                The experiment logs
+        """
+        raise NotImplementedError("AttackEngine module run() function missing")
+
+    @abstractmethod
+    def get_logs(self):
+        """
+        Get experiment logs
+
+        Returns
+        -------
+            logs : list with elements of type LoggerInterface
+                The experiment logs
+        """
+        raise NotImplementedError("Attack module get_logs() function missing")
+
     @abstractmethod
     def close(self): 
+        """
+        End of session clean up
+        """
         pass
