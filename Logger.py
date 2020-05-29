@@ -65,6 +65,8 @@ class Logger(LoggerInterface):
         load_file = str(self._save_dir()/("experiment-" + str(experiment_id) + ".txt"))
         with open(load_file, "rb") as fn: 
             self.logs = load(fn)
+        self.save_file = load_file
+        self.saved = True
         info("Experiment logs loaded from " + load_file + "\nRun 'logger.get_all()' to get the loaded logs")
 
     # end of session clean up, save all the logs

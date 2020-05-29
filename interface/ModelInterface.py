@@ -148,20 +148,20 @@ class ModelInterface:
         preds = self.get_preds_batch(images)
         return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
 
-    def zip_labels_to_probs(self, probs):
+    def zip_labels_to_preds(self, preds):
         """
         Zips the predictions with their indicies for convenience
 
         Parameters
         ----------
-            probs : numpy.ndarray or list
+            preds : numpy.ndarray or list
                 Predictions
         Returns
         -------
             [[label, probability]] : numpy.ndarray -> shape = (number of classes, 2)
                 The predictions zipped with their indicies
         """
-        return array(list(zip(arange(len(probs)), probs)))
+        return array(list(zip(arange(len(preds)), preds)))
 
 class KerasModel(ModelInterface):
 
@@ -170,10 +170,10 @@ class KerasModel(ModelInterface):
         self.model = kmodel
 
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.model.predict(image))
+        return self.zip_labels_to_preds(self.model.predict(image))
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model.predict(images))))
+        return array(list(map(lambda x: self.zip_labels_to_preds(x), self.model.predict(images))))
 
 class TfLiteModel(ModelInterface):
 
@@ -185,22 +185,17 @@ class TfLiteModel(ModelInterface):
         self.output_index = self.interpreter.get_output_details()[0]["index"]
 
     def _evaluate(self, image):
-        # Pre-processing: add batch dimension and convert to float32 to match with
-        # the model's input data format.
         img = expand_dims(image, axis=0).astype(float32)
         self.interpreter.set_tensor(self.input_index, img)
-        # Run inference.
         self.interpreter.invoke()
-        # Post-processing: remove batch dimension and find the digit with highest
-        # probability.
         output = self.interpreter.tensor(self.output_index)
         return deepcopy(output()[0])
 
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self._evaluate(image))
+        return self.zip_labels_to_preds(self._evaluate(image))
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda img: self.zip_labels_to_probs(self._evaluate(img)), images)))
+        return array(list(map(lambda img: self.zip_labels_to_preds(self._evaluate(img)), images)))
 
 class PyTorchModel(ModelInterface):
 
@@ -210,7 +205,7 @@ class PyTorchModel(ModelInterface):
         self.model.eval()
 
     def get_preds(self, image):
-        return self.zip_labels_to_probs(self.model([image]).detach().numpy()[0])
+        return self.zip_labels_to_preds(self.model([image]).detach().numpy()[0])
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_probs(x), self.model(images).detach().numpy())))
+        return array(list(map(lambda x: self.zip_labels_to_preds(x), self.model(images).detach().numpy())))

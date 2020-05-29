@@ -18,14 +18,14 @@ class LoadDataInterface:
                 The absolute path to a file containing the file names of the images
                 to be loaded and the associated ground-truths. The file should be a text
                 file. The image file names and the ground-truths should be separated by 
-                a space and listed line by line, as below.
+                a space and listed line by line, as below
                 File structure:
                     image_file_name ground_truth
                     image_file_name ground_truth
                     ...
             img_folder_path: sting
                 The absolute path to the folder/directory containing the images to be
-                loaded.
+                loaded with file names as in the ground truths file
         """
         raise NotImplementedError("Loading module __init__() function missing")
 

@@ -45,7 +45,7 @@ class LoggerInterface:
 
         Returns
         -------
-            log : LoggerInterface
+            log : pandas.DataFrame
                 The last experiment log created/began
         """
         raise NotImplementedError("Logger module get() function missing")
@@ -57,7 +57,7 @@ class LoggerInterface:
 
         Returns
         -------
-            logs : list with elements of type LoggerInterface
+            logs : list with elements of type pandas.DataFrame
                 The experiment logs
         """ 
         raise NotImplementedError("Logger module get_all() function missing")

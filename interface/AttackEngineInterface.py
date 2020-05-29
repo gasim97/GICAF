@@ -37,7 +37,7 @@ class AttackEngineInterface:
                 be transfered between different attack methods
         Returns
         -------
-            logs : list with elements of type LoggerInterface
+            loggers : list with elements of type LoggerInterface
                 The experiment logs
         """
         raise NotImplementedError("AttackEngine module run() function missing")
@@ -49,7 +49,7 @@ class AttackEngineInterface:
 
         Returns
         -------
-            logs : list with elements of type LoggerInterface
+            loggers : list with elements of type LoggerInterface
                 The experiment logs
         """
         raise NotImplementedError("Attack module get_logs() function missing")
