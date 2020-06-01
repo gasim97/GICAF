@@ -1,6 +1,7 @@
 from gicaf.interface.AttackEngineInterface import AttackEngineInterface
 from gicaf.Logger import Logger
 from numpy import array
+from copy import deepcopy
 from logging import info
 
 class AttackEngine(AttackEngineInterface):
@@ -11,6 +12,7 @@ class AttackEngine(AttackEngineInterface):
         self.model = model
         self.attacks = attacks
         self.loggers = []
+        self.success_rates = []
         self.memory = {}
         self.save = save
         self._filter_wrong_predictions()
@@ -26,7 +28,7 @@ class AttackEngine(AttackEngineInterface):
         for attack in self.attacks:
             self.loggers.append(Logger())
             self.memory = {}
-            for i, image in enumerate(self.x):
+            for i, image in enumerate(deepcopy(self.x)):
                 if use_memory:
                     try:
                         image = image + self.memory[str(self.y[i])]
