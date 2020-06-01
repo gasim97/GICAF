@@ -49,7 +49,7 @@ class LoadData(LoadDataInterface):
     def preprocessing(self, x, bounds=(0, 1), dtype=float32):
         info("Preprocessing image bounds.")
         divisor = 255/(bounds[1] - bounds[0])
-        return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + self.bounds[0], j)), dtype=dtype), i))), img))), x)))
+        return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + bounds[0], j)), dtype=dtype), i))), img))), x)))
 
     def _save_dir(self):
         save_dir = Path(dirname(__file__) + "/tmp/saved_input_data/")
