@@ -1,7 +1,7 @@
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from gicaf.metrics.WaDIQaM import WaDIQaM
 from numpy.linalg import norm
-from numpy import inf
+from numpy import inf, ravel
 from cv2 import cvtColor, COLOR_BGR2RGB
 
 def psnr(image, adversarial_image, model_metadata):
@@ -15,8 +15,8 @@ def ssim(image, adversarial_image, model_metadata):
                                 multichannel=True if model_metadata['channels'] > 1 else False)
 
 def wadiqam(image, adversarial_image, model_metadata):
-    data = WaDIQaM.NonOverlappingCropPatches(cvtColor(image, COLOR_BGR2RGB) if model_metadata['bgr'] else image, 
-                                            cvtColor(adversarial_image, COLOR_BGR2RGB) if model_metadata['bgr'] else adversarial_image)
+    data = WaDIQaM.NonOverlappingCropPatches(cvtColor(adversarial_image, COLOR_BGR2RGB) if model_metadata['bgr'] else adversarial_image,
+                                            cvtColor(image, COLOR_BGR2RGB) if model_metadata['bgr'] else image)
     model = WaDIQaM.get_FRnet()
     dist_patches = data[0].unsqueeze(0)
     ref_patches = data[1].unsqueeze(0)
@@ -24,7 +24,12 @@ def wadiqam(image, adversarial_image, model_metadata):
     return score.item()
 
 def normZero(image, adversarial_image, model_metadata):
-    return norm(adversarial_image - image, 0)
+    img = image
+    adv = adversarial_image
+    for _ in range(model_metadata['channels'] - 1):
+        img = ravel(img)
+        adv = ravel(adv)
+    return norm(adv - img, 0)
 
 def normTwo(image, adversarial_image, model_metadata):
     return norm(adversarial_image - image, 2)
