@@ -7,12 +7,7 @@ from pickle import dump, load
 from pathlib import Path
 from os.path import dirname
 
-# from scipy.misc import imread, imresize
-# import os
-# import cv2
-# import shutil
-
-# TODO Preprocessing options?
+# TODO Improve preprocessing options
 
 class LoadData(LoadDataInterface):
 
@@ -39,29 +34,22 @@ class LoadData(LoadDataInterface):
         info("Test set successfully read.")
         return data
 
-    def load_images(self, index_ranges, height, width, bgr=False):
-        meta_data = self.read_txt_file(index_ranges) # get image file names and ground truths
+    def get_data(self, index_ranges, model_metadata): 
+        images_metadata = self.read_txt_file(index_ranges) # get image file names and ground truths
         info("Loading images (directory path = '" + self.img_folder_path + "')...")
-        x = list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(height, width), color_mode='rgb')), meta_data)) # load images for file names in meta_data
-        if (bgr):
-            x = list(map(lambda x: cvtColor(x, COLOR_RGB2BGR), x))
-        y = list(map(lambda x: x[1], meta_data)) # unpack ground truths from meta_data
+        x = list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(model_metadata['height'], model_metadata['width']), color_mode='rgb')), images_metadata)) # load images for file names in meta_data
+        if (model_metadata['bgr']):
+            x = asarray(list(map(lambda x: cvtColor(x, COLOR_RGB2BGR), x)))
+        y = asarray(list(map(lambda x: x[1], images_metadata))) # unpack ground truths from meta_data
         info("Images successfully loaded.")
-        return asarray(x), asarray(y)
-
-    # get images and ground truths
-    def get_data(self, index_ranges, height, width): 
-        return self.load_images(index_ranges, height, width)
-    # returns [images], [ground truths]
-
-    # get bgr images and ground truths
-    def get_data_bgr(self, index_ranges, height, width): 
-        return self.load_images(index_ranges, height, width, bgr=True)
-    # returns [images], [ground truths]
+        if (model_metadata['bounds'] != (0, 255)):
+            x = self.preprocessing(x, model_metadata['bounds'])
+        return x, y
 
     def preprocessing(self, x, bounds=(0, 1), dtype=float32):
+        info("Preprocessing image bounds.")
         divisor = 255/(bounds[1] - bounds[0])
-        return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor, j)), dtype=dtype), i))), img))), x)))
+        return array(list(map(lambda img: array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + self.bounds[0], j)), dtype=dtype), i))), img))), x)))
 
     def _save_dir(self):
         save_dir = Path(dirname(__file__) + "/tmp/saved_input_data/")

@@ -1,5 +1,7 @@
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from gicaf.metrics.WaDIQaM import WaDIQaM
+from numpy.linalg import norm
+from numpy import inf
 from cv2 import cvtColor, COLOR_BGR2RGB
 
 def psnr(image, adversarial_image, model_metadata):
@@ -20,3 +22,12 @@ def wadiqam(image, adversarial_image, model_metadata):
     ref_patches = data[1].unsqueeze(0)
     score = model((dist_patches, ref_patches))
     return score.item()
+
+def normZero(image, adversarial_image, model_metadata):
+    return norm(adversarial_image - image, 0)
+
+def normTwo(image, adversarial_image, model_metadata):
+    return norm(adversarial_image - image, 2)
+
+def normInf(image, adversarial_image, model_metadata):
+    return norm(adversarial_image - image, inf)

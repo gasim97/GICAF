@@ -39,42 +39,17 @@ class LoadDataInterface:
             index_ranges : list of 2-tuples with elements of type int
                 Specifies the indicies of the data to load, each tuple contains 
                 (start index, end index) both inclusive
-            height: int
-                Model input height
-            width: int
-                Model input width
+            model_metadata : dict
+                Model metadata dictionary populated as specified in ModelInterface.py
         Returns
         -------
             images : numpy.ndarray
-                Loaded images
+                Loaded images in the correct format, i.e. preprocessing for model input
+                size and value bounds 
             ground truths : numpy.ndarray
                 The ground truths of the loaded images
         """
         raise NotImplementedError("Loading module get_data() function missing")
-
-    @abstractmethod
-    def get_data_bgr(self, index_ranges, height, width): 
-        """
-        Get BGR images and ground truths
-
-        Parameters
-        ----------
-            index_ranges : list of 2-tuples with elements of type int
-                Specifies the indicies of the data to load (lines to read in the 
-                ground-truths file), each tuple contains (start index, end index) 
-                both inclusive
-            height: int
-                Model input height
-            width: int
-                Model input width
-        Returns
-        -------
-            images : numpy.ndarray
-                Loaded images in BGR format
-            ground truths: numpy.ndarray
-                The ground truths of the loaded images
-        """
-        raise NotImplementedError("Loading module get_data_bgr() function missing")
 
     @abstractmethod
     def save(self, x, y, name): 

@@ -32,7 +32,7 @@ class AdaptiveSimBA(AttackInterface):
 
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
-                        'ssim', 'psnr', 'image', 'top_preds', 'success'])
+                        'ssim', 'psnr', 'wadiqam', 'normzero', 'image', 'top_preds', 'success'])
 
         self.ps = [p]
         count = 0
@@ -49,6 +49,8 @@ class AdaptiveSimBA(AttackInterface):
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
         ssim = stats.ssim(image, adv, self.model.metadata)
         psnr = stats.psnr(image, adv, self.model.metadata)
+        wadiqam = stats.wadiqam(image, adv, self.model.metadata)
+        normZero = stats.normZero(image, adv, self.model.metadata)
         self.logger.append({
             "iterations": iteration,
             "total calls": self.total_calls,
@@ -57,6 +59,8 @@ class AdaptiveSimBA(AttackInterface):
             "is_adv": is_adv,
             "ssim": ssim,
             "psnr": psnr,
+            "wadiqam": wadiqam,
+            "normzero": normZero,
             "image": image,
             "top_preds": top_preds,
             "success": False,
@@ -80,6 +84,8 @@ class AdaptiveSimBA(AttackInterface):
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
             ssim = stats.ssim(image, adv, self.model.metadata)
             psnr = stats.psnr(image, adv, self.model.metadata)
+            wadiqam = stats.wadiqam(image, adv, self.model.metadata)
+            normZero = stats.normZero(image, adv, self.model.metadata)
 
             if success:
                 count = 0
@@ -109,6 +115,8 @@ class AdaptiveSimBA(AttackInterface):
                 "is_adv": is_adv,
                 "ssim": ssim,
                 "psnr": psnr,
+                "wadiqam": wadiqam,
+                "normzero": normZero,
                 "image": image_save,
                 "top_preds": preds_save,
                 "success": success,
@@ -125,6 +133,8 @@ class AdaptiveSimBA(AttackInterface):
                     "is_adv": is_adv,
                     "ssim": ssim,
                     "psnr": psnr,
+                    "wadiqam": wadiqam,
+                    "normzero": normZero,
                     "image": adv,
                     "top_preds": top_preds,
                     "success": success,

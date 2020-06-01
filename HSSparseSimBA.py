@@ -32,28 +32,18 @@ class HSSparseSimBA(AttackInterface):
         ####
         loss_label, p = top_preds[0]
 
-        # self.calcHS(image, loss_label)
-        # top_preds = self.get_top_5(image)
-        # _, p = top_preds[0]
+        self.calcHS(image, loss_label)
+        top_preds = self.get_top_5(image)
+        _, p = top_preds[0]
 
-        probs = array(list(map(lambda p: p[1], top_preds)))
-        # sum_probs = sum(probs)
-        # probs = array(list(map(lambda p: p/sum_probs, probs)))
-        softmax_probs = softmax(probs)
-        self.norms = [norm(softmax_probs)/(norm(softmax_probs[1:]))]
         self.ps = [p]
         count = 0
-        past_qs = []
         self.done = []
         self.num_directions = 1
 
-        # self.calcHS(image, loss_label)
-        
-        # top_preds = self.get_top_5(image)
-        # _, p = top_preds[0]
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
-                        'ssim', 'psnr', 'image', 'top_preds', 'success'])
+                        'ssim', 'psnr', 'wadiqam', 'normzero', 'image', 'top_preds', 'success'])
         self.total_calls = 0
         delta = 0
         is_adv = 0
@@ -64,6 +54,8 @@ class HSSparseSimBA(AttackInterface):
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
         ssim = stats.ssim(image, adv, self.model.metadata)
         psnr = stats.psnr(image, adv, self.model.metadata)
+        wadiqam = stats.wadiqam(image, adv, self.model.metadata)
+        normZero = stats.normZero(image, adv, self.model.metadata)
         self.logger.append({
             "iterations": iteration,
             "total calls": self.total_calls,
@@ -72,6 +64,8 @@ class HSSparseSimBA(AttackInterface):
             "is_adv": is_adv,
             "ssim": ssim,
             "psnr": psnr,
+            "wadiqam": wadiqam,
+            "normzero": normZero,
             "image": image,
             "top_preds": top_preds,
             "success": False,
@@ -96,19 +90,8 @@ class HSSparseSimBA(AttackInterface):
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
             ssim = stats.ssim(image, adv, self.model.metadata)
             psnr = stats.psnr(image, adv, self.model.metadata)
-
-            if success:
-                count = 0
-                past_qs.append(q)
-                self.epsilon = self.initial_epsilon
-            else:
-                if count == 4:
-                    self.epsilon = self.initial_epsilon + 3 * (self.size * (self.bounds[1] - self.bounds[0]))/255
-                if count % 50 == 0 and len(past_qs) > 0:
-                    last_q, past_qs = past_qs[-1], past_qs[:-1]
-                    delta = delta + self.epsilon * last_q
-                    self.ps = self.ps[:-1]
-                    self.norms = self.norms[:-1]
+            wadiqam = stats.wadiqam(image, adv, self.model.metadata)
+            normZero = stats.normZero(image, adv, self.model.metadata)
 
             if iteration % 100 == 0: #only save image and probs every 100 steps, to save memory space
                 image_save = adv
@@ -125,6 +108,8 @@ class HSSparseSimBA(AttackInterface):
                 "is_adv": is_adv,
                 "ssim": ssim,
                 "psnr": psnr,
+                "wadiqam": wadiqam,
+                "normzero": normZero,
                 "image": image_save,
                 "top_preds": preds_save,
                 "success": success,
@@ -141,6 +126,8 @@ class HSSparseSimBA(AttackInterface):
                     "is_adv": is_adv,
                     "ssim": ssim,
                     "psnr": psnr,
+                    "wadiqam": wadiqam,
+                    "normzero": normZero,
                     "image": adv,
                     "top_preds": top_preds,
                     "success": success,
@@ -193,52 +180,43 @@ class HSSparseSimBA(AttackInterface):
     #             self.beta = beta
     #     print('Selected beta: ' + str(self.beta))
 
-    # def calcHS(self, image, label):
-    #     delta = full([self.height, self.width, self.channels], self.epsilon/(self.height*self.width*self.channels))
-    #     x_pos = clip(image + delta, self.bounds[0], self.bounds[1])
-    #     x_pos_2 = clip(x_pos + delta, self.bounds[0], self.bounds[1])
-    #     x_neg = clip(image - delta, self.bounds[0], self.bounds[1])
-    #     x_neg_2 = clip(x_neg - delta, self.bounds[0], self.bounds[1])
-    #     preds = [array(list(map(lambda p: p[1], self.model.get_preds(x_neg_2)))), 
-    #               array(list(map(lambda p: p[1], self.model.get_preds(x_neg)))), 
-    #               array(list(map(lambda p: p[1], self.model.get_preds(image)))), 
-    #               array(list(map(lambda p: p[1], self.model.get_preds(x_pos)))),
-    #               array(list(map(lambda p: p[1], self.model.get_preds(x_pos_2))))] # map to extract probability in position 1 of each element and throw away label
+    def calcHS(self, image, label):
+        delta = full([self.height, self.width, self.channels], self.epsilon/(self.height*self.width*self.channels))
+        x_pos = clip(image + delta, self.bounds[0], self.bounds[1])
+        x_pos_2 = clip(x_pos + delta, self.bounds[0], self.bounds[1])
+        x_neg = clip(image - delta, self.bounds[0], self.bounds[1])
+        x_neg_2 = clip(x_neg - delta, self.bounds[0], self.bounds[1])
+        preds = [array(list(map(lambda p: p[1], self.model.get_preds(x_neg_2)))), 
+                  array(list(map(lambda p: p[1], self.model.get_preds(x_neg)))), 
+                  array(list(map(lambda p: p[1], self.model.get_preds(image)))), 
+                  array(list(map(lambda p: p[1], self.model.get_preds(x_pos)))),
+                  array(list(map(lambda p: p[1], self.model.get_preds(x_pos_2))))] # map to extract probability in position 1 of each element and throw away label
 
-    #     y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
-    #     betas = linspace(0.1, 2, 20)
-    #     max_norm = 0
-    #     for beta in betas:
-    #         loss = [dot(-y.T, log(softmax(beta*log(preds[0])))), dot(-y.T, log(softmax(beta*log(preds[1])))), dot(-y.T, log(softmax(beta*log(preds[2]))))]
-    #         hessian_norm = norm(gradient(gradient(loss)))
-    #         print('beta, hessian norm: ' + str(beta) + ', ' + str(hessian_norm))
-    #         if (hessian_norm > max_norm):
-    #             max_norm = hessian_norm
-    #             self.beta = beta
-    #     print('Selected beta: ' + str(self.beta))
+        y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
+        betas = linspace(0.1, 2, 20)
+        max_norm = 0
+        for beta in betas:
+            loss = [dot(-y.T, log(softmax(beta*log(preds[0])))), dot(-y.T, log(softmax(beta*log(preds[1])))), dot(-y.T, log(softmax(beta*log(preds[2]))))]
+            hessian_norm = norm(gradient(gradient(loss)))
+            print('beta, hessian norm: ' + str(beta) + ', ' + str(hessian_norm))
+            if (hessian_norm > max_norm):
+                max_norm = hessian_norm
+                self.beta = beta
+        print('Selected beta: ' + str(self.beta))
 
-    # def get_top_5(self, x):
-    #     preds = self.model.get_preds(x)
-    #     probs = softmax(self.beta*log(array(list(map(lambda x: x[1], preds)))))
-    #     preds = array(list(map(lambda x: array([int(x[0]), probs[int(x[0])]]), preds)))
-    #     return flip(preds[preds[:, 1].argsort()][-5:], 0)
+    def get_top_5(self, x):
+        preds = self.model.get_preds(x)
+        probs = softmax(self.beta*log(array(list(map(lambda x: x[1], preds)))))
+        preds = array(list(map(lambda x: array([int(x[0]), probs[int(x[0])]]), preds)))
+        return flip(preds[preds[:, 1].argsort()][-5:], 0)
 
     def check_pos(self, x, delta, q, p, loss_label):
         success = False #initialise as False by default
         pos_x = x + delta + self.epsilon * q
         pos_x = clip(pos_x, self.bounds[0], self.bounds[1])
-        top_5_preds = self.model.get_top_5(pos_x)
+        top_5_preds = self.get_top_5(pos_x)
         if self.model.metadata['activation_bits'] <= 8:
             top_5_preds = self.adjust_preds(top_5_preds)
-        
-        # probs = array(list(map(lambda p: p[1], top_5_preds)))
-        # sum_probs = sum(probs)
-        # probs = array(list(map(lambda p: p/sum_probs, probs)))
-        # softmax_probs = softmax(probs)
-        # if norm(softmax_probs[1:]) == 0:
-        #     norm_test = inf
-        # else:
-        #     norm_test = norm(softmax_probs)/(norm(softmax_probs[1:]))
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
         if len(idx) == 0:
@@ -251,7 +229,6 @@ class HSSparseSimBA(AttackInterface):
         if p_test < self.ps[-1] or idx != 0:
             delta = delta + self.epsilon*q #add new perturbation to total perturbation
             self.ps.append(p_test) #update new p
-            # self.norms.append(norm_test)
             success = True
         return delta, p, top_5_preds, success
 
@@ -260,18 +237,9 @@ class HSSparseSimBA(AttackInterface):
         neg_x = x + delta - self.epsilon * q
         # neg_x = self.adjust_pertubation(neg_x, q_indicies)
         neg_x = clip(neg_x, self.bounds[0], self.bounds[1])
-        top_5_preds = self.model.get_top_5(neg_x)
+        top_5_preds = self.get_top_5(neg_x)
         if self.model.metadata['activation_bits'] <= 8:
             top_5_preds = self.adjust_preds(top_5_preds)
-        
-        # probs = array(list(map(lambda p: p[1], top_5_preds)))
-        # sum_probs = sum(probs)
-        # probs = array(list(map(lambda p: p/sum_probs, probs)))
-        # softmax_probs = softmax(probs)
-        # if norm(softmax_probs[1:]) == 0:
-        #     norm_test = inf
-        # else:
-        #     norm_test = norm(softmax_probs)/(norm(softmax_probs[1:]))
 
         idx = argwhere(loss_label==top_5_preds[:,0]) #positions of occurences of label in preds
         if len(idx) == 0:
@@ -284,7 +252,6 @@ class HSSparseSimBA(AttackInterface):
         if p_test < self.ps[-1] or idx != 0:
             delta = delta - self.epsilon*q #add new perturbation to total perturbation
             self.ps.append(p_test) #update new p 
-            # self.norms.append(norm_test)
             success = True
         return delta, p, top_5_preds, success
 

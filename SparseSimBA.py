@@ -30,7 +30,7 @@ class SparseSimBA(AttackInterface):
         loss_label, p = top_preds[0]
         self.logger.nl(['iterations','total calls',
                         'epsilon','size', 'is_adv',
-                        'ssim', 'psnr', 'image', 'top_preds'])
+                        'ssim', 'psnr', 'wadiqam', 'normzero', 'image', 'top_preds'])
         total_calls = 0
         delta = 0
         is_adv = 0
@@ -41,6 +41,8 @@ class SparseSimBA(AttackInterface):
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
         ssim = stats.ssim(image, adv, self.model.metadata)
         psnr = stats.psnr(image, adv, self.model.metadata)
+        wadiqam = stats.wadiqam(image, adv, self.model.metadata)
+        normZero = stats.normZero(image, adv, self.model.metadata)
         self.logger.append({
             "iterations": iteration,
             "total calls": total_calls,
@@ -49,6 +51,8 @@ class SparseSimBA(AttackInterface):
             "is_adv": is_adv,
             "ssim": ssim,
             "psnr": psnr,
+            "wadiqam": wadiqam,
+            "normzero": normZero,
             "image": image,
             "top_preds": top_preds
         })
@@ -68,6 +72,8 @@ class SparseSimBA(AttackInterface):
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
             ssim = stats.ssim(image, adv, self.model.metadata)
             psnr = stats.psnr(image, adv, self.model.metadata)
+            wadiqam = stats.wadiqam(image, adv, self.model.metadata)
+            normZero = stats.normZero(image, adv, self.model.metadata)
 
             if iteration % 100 == 0: #only save image and probs every 100 steps, to save memory space
                 image_save = adv
@@ -84,6 +90,8 @@ class SparseSimBA(AttackInterface):
                 "is_adv": is_adv,
                 "ssim": ssim,
                 "psnr": psnr,
+                "wadiqam": wadiqam,
+                "normzero": normZero,
                 "image": image_save,
                 "top_preds": preds_save
             })
@@ -99,6 +107,8 @@ class SparseSimBA(AttackInterface):
                     "is_adv": is_adv,
                     "ssim": ssim,
                     "psnr": psnr,
+                    "wadiqam": wadiqam,
+                    "normzero": normZero,
                     "image": adv,
                     "top_preds": top_preds
                 }) 
