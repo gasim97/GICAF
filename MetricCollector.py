@@ -1,13 +1,16 @@
 from gicaf.interface.MetricCollectorInterface import MetricCollectorInterface
-import gicaf.metrics as metrics
+import gicaf.metrics.PNorm as PNorm
+import gicaf.metrics.PSNR as PSNR
+import gicaf.metrics.SSIM as SSIM
+import gicaf.metrics.WaDIQaM as WaDIQaM
 
 metric_list = {
-    "absolute-value norm": metrics.PNorm.AbsValueNorm(),
-    "euclidean norm": metrics.PNorm.EuclideanNorm(),
-    "infinity norm": metrics.PNorm.InfNorm(),
-    "psnr": metrics.PSNR.PSNR(),
-    "ssim": metrics.SSIM.SSIM(),
-    "wadiqam": metrics.WaDIQaM.WaDIQaM(),
+    "absolute-value norm": PNorm.AbsValueNorm,
+    "euclidean norm": PNorm.EuclideanNorm,
+    "infinity norm": PNorm.InfNorm,
+    "psnr": PSNR.PSNR,
+    "ssim": SSIM.SSIM,
+    "wadiqam": WaDIQaM.WaDIQaM,
 }
 
 class MetricCollector(MetricCollectorInterface):
@@ -20,7 +23,7 @@ class MetricCollector(MetricCollectorInterface):
             self.metrics = []
             return
         try: 
-            self.metrics = list(map(lambda x: (x, metric_list[x]), metric_names))
+            self.metrics = list(map(lambda x: (x, metric_list[x]()), metric_names))
         except KeyError:
             raise NameError("Invalid metric name provided.\n The metrics below are supported:\n" + str(metric_list.keys))
         self.metric_names = metric_names
