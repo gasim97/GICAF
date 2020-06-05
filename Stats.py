@@ -1,5 +1,5 @@
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
-from gicaf.metrics.WaDIQaM import WaDIQaM
+import gicaf.metrics.wadiqam.resources.Utils as WaDIQaM
 from numpy.linalg import norm
 from numpy import inf, ravel
 from cv2 import cvtColor, COLOR_BGR2RGB
@@ -23,7 +23,7 @@ def wadiqam(image, adversarial_image, model_metadata):
     score = model((dist_patches, ref_patches))
     return score.item()
 
-def normZero(image, adversarial_image, model_metadata):
+def absValueNorm(image, adversarial_image, model_metadata):
     img = image
     adv = adversarial_image
     for _ in range(model_metadata['channels'] - 1):
@@ -31,8 +31,8 @@ def normZero(image, adversarial_image, model_metadata):
         adv = ravel(adv)
     return norm(adv - img, 0)
 
-def normTwo(image, adversarial_image, model_metadata):
+def euclideanNorm(image, adversarial_image, model_metadata):
     return norm(adversarial_image - image, 2)
 
-def normInf(image, adversarial_image, model_metadata):
+def infinityNorm(image, adversarial_image, model_metadata):
     return norm(adversarial_image - image, inf)

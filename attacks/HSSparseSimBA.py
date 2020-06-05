@@ -1,13 +1,10 @@
 from gicaf.interface.AttackInterface import AttackInterface
-import gicaf.Stats as stats
 from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty, inf
+from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty
 from numpy.linalg import norm
 from numpy.random import randint
 from scipy.special import softmax
-from math import ceil
 import time
-from logging import info
 
 class HSSparseSimBA(AttackInterface):
 
@@ -37,7 +34,6 @@ class HSSparseSimBA(AttackInterface):
         _, p = top_preds[0]
 
         self.ps = [p]
-        count = 0
         self.done = []
         self.num_directions = 1
 
@@ -72,11 +68,9 @@ class HSSparseSimBA(AttackInterface):
             if success:
                 q = -q
             self.total_calls += 1
-            count +=1
             if not success:
                 delta, p, top_preds, success = self.check_neg(image, delta, q, p, loss_label)
                 self.total_calls += 1
-                count +=1
 
             #update data on df
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
