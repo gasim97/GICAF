@@ -2,12 +2,12 @@ from gicaf.interface.MetricCollectorInterface import MetricCollectorInterface
 import gicaf.metrics as metrics
 
 metric_list = {
-    "absolute-value norm": metrics.PNorm.AbsValueNorm,
-    "euclidean norm": metrics.PNorm.EuclideanNorm,
-    "infinity norm": metrics.PNorm.InfNorm,
-    "psnr": metrics.PSNR.PSNR,
-    "ssim": metrics.SSIM.SSIM,
-    "wadiqam": metrics.WaDIQaM.WaDIQaM,
+    "absolute-value norm": metrics.PNorm.AbsValueNorm(),
+    "euclidean norm": metrics.PNorm.EuclideanNorm(),
+    "infinity norm": metrics.PNorm.InfNorm(),
+    "psnr": metrics.PSNR.PSNR(),
+    "ssim": metrics.SSIM.SSIM(),
+    "wadiqam": metrics.WaDIQaM.WaDIQaM(),
 }
 
 class MetricCollector(MetricCollectorInterface):

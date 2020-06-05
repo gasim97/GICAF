@@ -7,6 +7,13 @@ class MetricInterface:
     def version(cls): return "1.0"
 
     @abstractmethod
+    def __init__(self):
+        """
+        Initialize metric
+        """
+        pass
+
+    @abstractmethod
     def __call__(self, image, adversarial_image, model_metadata): 
         """
         Run visual quality assessment metric
