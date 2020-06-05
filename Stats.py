@@ -1,5 +1,5 @@
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
-import gicaf.metrics.wadiqam.resources.Utils as WaDIQaM
+import gicaf.metrics.resources.wadiqam.Utils as WaDIQaM
 from numpy.linalg import norm
 from numpy import inf, ravel
 from cv2 import cvtColor, COLOR_BGR2RGB

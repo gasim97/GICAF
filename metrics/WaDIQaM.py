@@ -1,5 +1,5 @@
 from gicaf.interface.MetricInterface import MetricInterface
-from gicaf.metrics.wadiqam.resources import Utils
+from gicaf.metrics.resources.wadiqam import Utils
 from cv2 import cvtColor, COLOR_BGR2RGB
 
 class WaDIQaM(MetricInterface):
