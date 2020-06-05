@@ -24,8 +24,9 @@ class MetricCollector(MetricCollectorInterface):
             return
         try: 
             self.metrics = list(map(lambda x: (x, metric_list[x]()), metric_names))
-        except KeyError:
-            raise NameError("Invalid metric name provided.\n The metrics below are supported:\n" + str(metric_list.keys))
+        except KeyError as e:
+            raise NameError("Invalid metric name provided - " + str(e) + ".\n The metrics below are supported:\n" 
+                            + str(metric_list.keys()))
         self.metric_names = metric_names
         self.model_metadata = model_metadata
 
