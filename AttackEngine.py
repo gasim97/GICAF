@@ -1,5 +1,6 @@
 from gicaf.interface.AttackEngineInterface import AttackEngineInterface
 from gicaf.Logger import Logger
+from gicaf.MetricCollector import MetricCollector
 from numpy import array
 from copy import deepcopy
 from logging import info
@@ -24,9 +25,9 @@ class AttackEngine(AttackEngineInterface):
         self.x = array(list(map(lambda i: self.x[i], correct_pred_indicies)))
         self.y = array(list(map(lambda i: self.y[i], correct_pred_indicies)))
 
-    def run(self, use_memory=False): 
+    def run(self, metric_names=None, use_memory=False): 
         for attack in self.attacks:
-            self.loggers.append(Logger())
+            self.loggers.append(Logger(metric_collector=MetricCollector(self.model.metadata, metric_names)))
             self.memory = {}
             for i, image in enumerate(deepcopy(self.x)):
                 if use_memory:

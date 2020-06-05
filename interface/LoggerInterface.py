@@ -7,9 +7,14 @@ class LoggerInterface:
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self): 
+    def __init__(self, metric_collector): 
         """
         Initialize logger
+
+        Parameters
+        ----------
+            metric_collector : MetricCollector
+                Initialised metric collector, which should be used to colle
         """
         raise NotImplementedError("Logger module __init__() function missing")
 
@@ -21,20 +26,25 @@ class LoggerInterface:
         Parameters
         ----------
             fields : list with elements of type string
-                The column headings of the new log
+                The fields of the new log. The metric names of the metrics to
+                be collected by the MetricCollector should be also be fields
         """
         raise NotImplementedError("Logger module nl() function missing")
 
     @abstractmethod
-    def append(self, data): 
+    def append(self, data, image, adversarial_image): 
         """
-        Log new item
+        Run metrics and log new item
 
         Parameters
         ----------
             data : dict
                 Data to append to the current log. The fields must match those
                 provided in the last call to LoggerInterface.nl(fields)
+            image : numpy.ndarray
+                Reference image
+            adversarial_image : numpy.ndarray
+                Adversarial image at current step
         """
         raise NotImplementedError("Logger module append() function missing")
 

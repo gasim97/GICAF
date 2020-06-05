@@ -13,6 +13,7 @@ class ResNet50(KerasModel):
                                                     'bounds': (0, 255),
                                                     'bgr': True, 
                                                     'classes': 1000, 
+                                                    'apply_softmax': False,
                                                     'bounds': (0, 255),
                                                     'weight_bits': 32,
                                                     'activation_bits': 32})

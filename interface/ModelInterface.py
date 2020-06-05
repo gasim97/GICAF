@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from numpy import array, arange, flip, expand_dims, float32
-import tensorflow.lite as lite
+from scipy.special import softmax
 from copy import deepcopy
 
 class ModelInterface:
@@ -8,6 +8,22 @@ class ModelInterface:
 
     @classmethod
     def version(cls): return "1.0"
+
+    @classmethod
+    def zip_labels_to_preds(cls, preds):
+        """
+        Zips the predictions with their indicies for convenience
+
+        Parameters
+        ----------
+            preds : numpy.ndarray or list
+                Predictions
+        Returns
+        -------
+            [[label, probability]] : numpy.ndarray -> shape = (number of classes, 2)
+                The predictions zipped with their indicies
+        """
+        return array(list(zip(arange(len(preds)), preds)))
 
     @abstractmethod
     def __init__(self, model, metadata): 
@@ -19,7 +35,8 @@ class ModelInterface:
             model : Any
                 A model of the type expected by the inheriting class
             metadata: dict
-                Contains the following fields
+                To be stored as an instance variable 'self.metadata' and contains the 
+                following fields
                     'height' : int
                         Input height
                     'width' : int
@@ -32,6 +49,8 @@ class ModelInterface:
                         True if input is to be loaded in BGR format, and False if RGB
                     'classes': int
                         Number of output classes
+                    'apply_softmax' : boolean
+                        Whether or not to apply softmax to the model's output
                     'weight_bits': int
                         Model weights bit width
                     'activation_bits': int
@@ -43,7 +62,8 @@ class ModelInterface:
     @abstractmethod
     def get_preds(self, image):
         """
-        Run inference
+        Run inference on the model and apply softmax to the output if 
+        'apply_sfotmax' field in 'self.metadata' is True
 
         Parameters
         ----------
@@ -59,7 +79,8 @@ class ModelInterface:
     @abstractmethod
     def get_preds_batch(self, images): 
         """
-        Run inference on batch
+        Run inference on batch and apply softmax to the output if 
+        'apply_sfotmax' field in 'self.metadata' is True
 
         Parameters
         ----------
@@ -148,21 +169,6 @@ class ModelInterface:
         preds = self.get_preds_batch(images)
         return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
 
-    def zip_labels_to_preds(self, preds):
-        """
-        Zips the predictions with their indicies for convenience
-
-        Parameters
-        ----------
-            preds : numpy.ndarray or list
-                Predictions
-        Returns
-        -------
-            [[label, probability]] : numpy.ndarray -> shape = (number of classes, 2)
-                The predictions zipped with their indicies
-        """
-        return array(list(zip(arange(len(preds)), preds)))
-
 class KerasModel(ModelInterface):
 
     def __init__(self, kmodel, metadata): 
@@ -170,10 +176,12 @@ class KerasModel(ModelInterface):
         self.model = kmodel
 
     def get_preds(self, image):
-        return self.zip_labels_to_preds(self.model.predict(image))
+        preds = self.model.predict(image)
+        return ModelInterface.zip_labels_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_preds(x), self.model.predict(images))))
+        preds = self.model.predict(images)
+        return array(list(map(lambda x: ModelInterface.zip_labels_to_preds(x), preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
 
 class TfLiteModel(ModelInterface):
 
@@ -192,10 +200,13 @@ class TfLiteModel(ModelInterface):
         return deepcopy(output()[0])
 
     def get_preds(self, image):
-        return self.zip_labels_to_preds(self._evaluate(image))
+        preds = self._evaluate(image)
+        return ModelInterface.zip_labels_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda img: self.zip_labels_to_preds(self._evaluate(img)), images)))
+        return array(list(map(lambda img: ModelInterface.zip_labels_to_preds(
+            self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))
+            ), images)))
 
 class PyTorchModel(ModelInterface):
 
@@ -205,7 +216,9 @@ class PyTorchModel(ModelInterface):
         self.model.eval()
 
     def get_preds(self, image):
-        return self.zip_labels_to_preds(self.model([image]).detach().numpy()[0])
+        preds = self.model([image]).detach().numpy()[0]
+        return ModelInterface.zip_labels_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda x: self.zip_labels_to_preds(x), self.model(images).detach().numpy())))
+        preds = self.model(images).detach().numpy()
+        return array(list(map(lambda x: ModelInterface.zip_labels_to_preds(x), preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))

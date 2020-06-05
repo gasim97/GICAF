@@ -230,6 +230,7 @@ class VGG19(PyTorchModel):
                             'bounds': (0, (bit_width**2)-1), 
                             'bgr': False, 
                             'classes': 1000, 
+                            'apply_softmax': False,
                             'percision': bit_width,
                             'weight_bits': bit_width,
                             'activation_bits': bit_width}

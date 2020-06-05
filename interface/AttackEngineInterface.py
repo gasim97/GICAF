@@ -25,16 +25,19 @@ class AttackEngineInterface:
         raise NotImplementedError("AttackEngine module __init__() function missing")
 
     @abstractmethod
-    def run(self, use_memory=False): 
+    def run(self, metric_names=None, use_memory=False): 
         """
         Runs the attack
 
         Parameters
         ----------
+            metric_names : list with elements of type string
+                The metric names of the visual metrics to be collected. Default is
+                None
             use_memory : bool
                 Indicates whether or not to transfer knowledge from successful
                 attacks to subsequent images of the same class. Memory is not to
-                be transfered between different attack methods
+                be transfered between different attack methods. Default is False
         Returns
         -------
             loggers : list with elements of type LoggerInterface
