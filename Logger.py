@@ -14,8 +14,9 @@ class Logger(LoggerInterface):
 
     # new log
     def nl(self, fields):
-        if self.metric_collector.get_metric_list():
-            fields = fields.append(self.metric_collector.get_metric_list())
+        metric_list = self.metric_collector.get_metric_list()
+        for metric in metric_list:
+            fields.append(metric)
         new_log = DataFrame(columns=fields)
         self.logs.append(new_log)
         info("New log (" + str(len(self.logs)) + ") with columns:\n" + str(fields) + "\n\n")
