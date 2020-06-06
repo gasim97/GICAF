@@ -7,16 +7,20 @@ class AttackEngineInterface:
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, x, y, model, attacks): 
+    def __init__(self, data_generator, model, attacks): 
         """
         Initialize attack engine
 
         Parameters
         ----------
-            x : numpy.ndarray -> shape = (batch size, height, width, channels)
-                Image(s) to use for attacks
-            y : numpy.ndarray -> shape = (batch size, 1)
-                Ground-truths of x 
+            data_generator : generator function
+                Provides the samples loaded by the user
+                Yields
+                ------
+                    x : numpy.ndarray
+                        Image to use for attacks
+                    y : int
+                        Ground-truth of x 
             model : ModelInterface
                 Model to carry out attacks on
             attacks : list with elements of type AttackInterface
@@ -42,6 +46,12 @@ class AttackEngineInterface:
         -------
             loggers : list with elements of type LoggerInterface
                 The experiment logs
+            success_rates : list with elements of type LoggerInterface
+                The experiment adversarial success rates
+        Note
+        ----
+            This method must call 'self.model.reset_query_count()' before each attack to
+            reset the model's query count
         """
         raise NotImplementedError("AttackEngine module run() function missing")
 

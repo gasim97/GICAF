@@ -7,14 +7,14 @@ class LoggerInterface:
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, metric_collector): 
+    def __init__(self, metric_collector=None): 
         """
         Initialize logger
 
         Parameters
         ----------
             metric_collector : MetricCollector
-                Initialised metric collector, which should be used to colle
+                Initialised metric collector. Default is None
         """
         raise NotImplementedError("Logger module __init__() function missing")
 

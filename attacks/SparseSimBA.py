@@ -1,3 +1,10 @@
+"""
+    Initial Implementation by Alvaro Robledo
+------
+Sourced and adapted from: https://github.com/alvarorobledo/sparse-simba/blob/master/utils.py
+Obtained: 27/01/2020
+"""
+
 from gicaf.interface.AttackInterface import AttackInterface
 from sys import setrecursionlimit
 from numpy import clip, argwhere, zeros
@@ -12,7 +19,7 @@ class SparseSimBA(AttackInterface):
         self.epsilon = epsilon
         self.query_limit = query_limit
 
-    def run(self, image, model, logger):
+    def __call__(self, image, model, logger):
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']
@@ -26,8 +33,8 @@ class SparseSimBA(AttackInterface):
 
         ####
         loss_label, p = top_preds[0]
-        self.logger.nl(['iterations','total calls',
-                        'epsilon','size', 'is_adv', 'image', 'top_preds'])
+        self.logger.nl(['iterations', 'epsilon','size', 
+                        'is_adv', 'image', 'top_preds'])
         total_calls = 0
         delta = 0
         is_adv = 0
@@ -39,7 +46,6 @@ class SparseSimBA(AttackInterface):
 
         self.logger.append({
             "iterations": iteration,
-            "total calls": total_calls,
             "epsilon": self.epsilon,
             "size": self.size,
             "is_adv": is_adv,
@@ -70,7 +76,6 @@ class SparseSimBA(AttackInterface):
                 
             self.logger.append({
                 "iterations": iteration,
-                "total calls": total_calls,
                 "epsilon": self.epsilon,
                 "size": self.size,
                 "is_adv": is_adv,
@@ -83,7 +88,6 @@ class SparseSimBA(AttackInterface):
                 is_adv = 1
                 self.logger.append({
                     "iterations": iteration,
-                    "total calls": total_calls,
                     "epsilon": self.epsilon,
                     "size": self.size,
                     "is_adv": is_adv,
@@ -154,6 +158,3 @@ class SparseSimBA(AttackInterface):
             #sample again (recursion)
             [a,b,c] = self.sample_nums(done)
         return [a,b,c]
-
-    def close(self):
-        pass

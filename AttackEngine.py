@@ -7,38 +7,50 @@ from logging import info
 
 class AttackEngine(AttackEngineInterface):
 
-    def __init__(self, x, y, model, attacks, save=True): 
-        self.x = x
-        self.y = y
+    def __init__(self, data_generator, model, attacks, save=True): 
+        self.data_generator = data_generator
         self.model = model
         self.attacks = attacks
         self.loggers = []
         self.success_rates = []
-        self.memory = {}
         self.save = save
+        self.pred_result_indicies = {
+            'correct': [],
+            'incorrect': [],
+        }
         self._filter_wrong_predictions()
 
     def _filter_wrong_predictions(self):
-        preds = self.model.get_top_1_batch(self.x)
-        correct_pred_indicies = list(map(lambda z: z[1], filter(lambda z: z[0] == True, map(lambda i: [preds[i][0] == self.y[i], i], range(len(self.y))))))
-        info(str(len(correct_pred_indicies)) + " out of " + str(len(self.x)) + " samples correctly predicted and will be used for an attack")
-        self.x = array(list(map(lambda i: self.x[i], correct_pred_indicies)))
-        self.y = array(list(map(lambda i: self.y[i], correct_pred_indicies)))
+        for i, (x, y) in enumerate(self.data_generator()):
+            if self.model.get_top_1(x)[0] == y:
+                self.pred_result_indicies['correct'].append(i)
+            else:
+                self.pred_result_indicies['incorrect'].append(i)
+            count = i
+        info(str(len(self.pred_result_indicies['correct'])) + " out of " + str(count + 1) + 
+            " samples correctly predicted and will be used for an attack")
 
     def run(self, metric_names=None, use_memory=False): 
+        metric_collector = MetricCollector(self.model, metric_names)
         for attack in self.attacks:
-            self.loggers.append(Logger(metric_collector=MetricCollector(self.model.metadata, metric_names)))
-            self.memory = {}
-            for i, image in enumerate(deepcopy(self.x)):
-                if use_memory:
-                    try:
-                        image = image + self.memory[str(self.y[i])]
-                    except KeyError:
-                        pass
-                adv = attack.run(image, self.model, self.loggers[-1])
-                if use_memory:
-                    self.memory[str(self.y[i])] = adv - image
-        return self.loggers
+            self.loggers.append(Logger(metric_collector=metric_collector))
+            memory = {}
+            num_success = 0
+            for i, (x, y) in enumerate(self.data_generator()):
+                if i in self.pred_result_indicies['correct']:
+                    if use_memory:
+                        try:
+                            x = x + memory[str(y)]
+                        except KeyError:
+                            pass
+                    self.model.reset_query_count()
+                    adv = attack(x, self.model, self.loggers[-1])
+                    if adv:
+                        num_success += 1
+                        if use_memory:
+                            memory[str(y)] = adv - x
+            self.success_rates.append(100*num_success/len(self.pred_result_indicies['correct']))
+        return self.loggers, self.success_rates
 
     def get_logs(self):
         return self.loggers

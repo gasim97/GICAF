@@ -20,7 +20,7 @@ class AttackInterface:
         raise NotImplementedError("Attack module __init__() function missing")
 
     @abstractmethod
-    def run(self, image, model, logger, memory_logger, query_limit=5000): 
+    def __call__(self, image, model, logger, memory_logger, query_limit=5000): 
         """
         Runs the attack
 
@@ -47,4 +47,4 @@ class AttackInterface:
         """
         End of session clean up
         """
-        raise NotImplementedError("Attack module close() function missing")
+        pass

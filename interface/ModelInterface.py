@@ -55,7 +55,11 @@ class ModelInterface:
                         Model weights bit width
                     'activation_bits': int
                         Model activations bit width
-                    
+        Note
+        ----
+            This method must create the following variables:
+                self.metadata = metadata
+                self.query_count = 0
         """
         raise NotImplementedError("Model module __init__() function missing")
 
@@ -73,6 +77,9 @@ class ModelInterface:
         -------
             [[label, probability]] : numpy.ndarray -> shape = (number of classes, 2)
                 The output indicies zipped with the predictions
+        Note
+        ----
+            This method must call 'self.queries_count(1)' to increment the query count
         """
         raise NotImplementedError("Model module get_preds() function missing")
 
@@ -90,6 +97,9 @@ class ModelInterface:
         -------
             [[[label, probability]]] : numpy.ndarray -> shape = (batch size, number of classes, 2)
                 The output indicies zipped with the predictions
+        Note
+        ----
+            This method must call 'self.queries_count(len(images))' to increment the query count
         """
         raise NotImplementedError("Model module get_preds_batch() function missing")
 
@@ -116,7 +126,8 @@ class ModelInterface:
                 The highest output probability/value
         """
         preds = self.get_preds(image)
-        return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then extract the last entry (highest probability with label)
+        return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then 
+        # extract the last entry (highest probability with label)
 
     def get_top_1_batch(self, images): 
         """
@@ -150,7 +161,9 @@ class ModelInterface:
                 zipped with the predictions
         """
         preds = self.get_preds(image)
-        return flip(preds[preds[:, 1].argsort()][-5:], 0) # sort predictions by probability, then extract the last 5 entries (highest probabilities with labels) and flip to sort by descending probability
+        return flip(preds[preds[:, 1].argsort()][-5:], 0) # sort predictions by probability, 
+        # then extract the last 5 entries (highest probabilities with labels) and flip to sort 
+        # by descending probability
 
     def get_top_5_batch(self, images): 
         """
@@ -169,24 +182,50 @@ class ModelInterface:
         preds = self.get_preds_batch(images)
         return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
 
+    def increment_query_count(self, num_queries):
+        """
+        Increases the model's internal query count
+
+        Parameters
+        ----------
+            num_queries : int
+                The number of queries to add to the current query count
+        """
+        self.query_count += num_queries
+
+    def reset_query_count(self):
+        """
+        Resets the model's internal query count to zero
+        """
+        self.query_count = 0
+
+    def get_query_count(self):
+        return self.query_count
+
 class KerasModel(ModelInterface):
 
     def __init__(self, kmodel, metadata): 
         self.metadata = metadata
+        self.query_count = 0
         self.model = kmodel
 
     def get_preds(self, image):
         preds = self.model.predict(image)
+        self.increment_query_count(1)
         return ModelInterface.zip_labels_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
         preds = self.model.predict(images)
-        return array(list(map(lambda x: ModelInterface.zip_labels_to_preds(x), preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
+        self.increment_query_count(len(images))
+        return array(list(map(
+            lambda x: ModelInterface.zip_labels_to_preds(x), 
+            preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
 
 class TfLiteModel(ModelInterface):
 
     def __init__(self, interpreter, metadata): 
         self.metadata = metadata
+        self.query_count = 0
         self.interpreter = interpreter
         self.interpreter.allocate_tensors()
         self.input_index = self.interpreter.get_input_details()[0]["index"]
@@ -201,24 +240,31 @@ class TfLiteModel(ModelInterface):
 
     def get_preds(self, image):
         preds = self._evaluate(image)
+        self.increment_query_count(1)
         return ModelInterface.zip_labels_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
-        return array(list(map(lambda img: ModelInterface.zip_labels_to_preds(
-            self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))
-            ), images)))
+        self.increment_query_count(len(images))
+        return array(list(map(
+            lambda img: ModelInterface.zip_labels_to_preds(self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))), 
+            images)))
 
 class PyTorchModel(ModelInterface):
 
     def __init__(self, model, metadata): 
         self.metadata = metadata
+        self.query_count = 0
         self.model = model
         self.model.eval()
 
     def get_preds(self, image):
         preds = self.model([image]).detach().numpy()[0]
+        self.increment_query_count(1)
         return ModelInterface.zip_labels_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
         preds = self.model(images).detach().numpy()
-        return array(list(map(lambda x: ModelInterface.zip_labels_to_preds(x), preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
+        self.increment_query_count(len(images))
+        return array(list(map(
+            lambda x: ModelInterface.zip_labels_to_preds(x), 
+            preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))

@@ -16,9 +16,9 @@ metric_list = {
 class MetricCollector(MetricCollectorInterface):
 
     @classmethod
-    def supported_metrics(cls): return metric_list.keys
+    def supported_metrics(cls): return metric_list.keys()
 
-    def __init__(self, model_metadata, metric_names=None):
+    def __init__(self, model, metric_names=None):
         if metric_names == None:
             self.metrics = []
             return
@@ -28,15 +28,17 @@ class MetricCollector(MetricCollectorInterface):
             raise NameError("Invalid metric name provided - " + str(e) + ".\n The metrics below are supported:\n" 
                             + str(metric_list.keys()))
         self.metric_names = metric_names
-        self.model_metadata = model_metadata
+        self.model = model
+
+    def __call__(self, image, adversarial_image): 
+        result = {
+            'model queries': self.model.get_query_count()
+        }
+        for metric in self.metrics:
+            result[metric[0]] = metric[1](image, adversarial_image, self.model.metadata)
+        return result
 
     def get_metric_list(self):
         if self.metrics == []:
             return
         return self.metric_names
-
-    def collect_metrics(self, image, adversarial_image): 
-        result = {}
-        for metric in self.metrics:
-            result[metric[0]] = metric[1](image, adversarial_image, self.model_metadata)
-        return result

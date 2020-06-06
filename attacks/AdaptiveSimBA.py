@@ -13,7 +13,7 @@ class AdaptiveSimBA(AttackInterface):
         self.initial_epsilon = epsilon
         self.query_limit = query_limit
 
-    def run(self, image, model, logger):
+    def __call__(self, image, model, logger):
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']
@@ -26,8 +26,8 @@ class AdaptiveSimBA(AttackInterface):
         top_preds = self.model.get_top_5(image)
         loss_label, p = top_preds[0]
 
-        self.logger.nl(['iterations','total calls',
-                        'epsilon','size', 'is_adv', 'image', 'top_preds', 'success'])
+        self.logger.nl(['iterations', 'epsilon','size', 
+                        'is_adv', 'image', 'top_preds', 'success'])
 
         self.ps = [p]
         count = 0
@@ -45,7 +45,6 @@ class AdaptiveSimBA(AttackInterface):
 
         self.logger.append({
             "iterations": iteration,
-            "total calls": self.total_calls,
             "epsilon": self.epsilon,
             "size": self.size,
             "is_adv": is_adv,
@@ -92,7 +91,6 @@ class AdaptiveSimBA(AttackInterface):
                 
             self.logger.append({
                 "iterations": iteration,
-                "total calls": self.total_calls,
                 "epsilon": self.epsilon,
                 "size": self.size,
                 "is_adv": is_adv,
@@ -106,7 +104,6 @@ class AdaptiveSimBA(AttackInterface):
                 is_adv = 1
                 self.logger.append({
                     "iterations": iteration,
-                    "total calls": self.total_calls,
                     "epsilon": self.epsilon,
                     "size": self.size,
                     "is_adv": is_adv,
@@ -202,6 +199,3 @@ class AdaptiveSimBA(AttackInterface):
         if [a,b,c] in self.done:
             [a,b,c] = self.sample_nums_rec()
         return [a,b,c]
-
-    def close(self):
-        pass

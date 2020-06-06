@@ -7,7 +7,9 @@ from pickle import dump, load
 from pathlib import Path
 from os.path import dirname
 
-# TODO Improve preprocessing options
+# TODO 
+# Improve preprocessing options? 
+# Update load function to use less memory 
 
 class LoadData(LoadDataInterface):
 
@@ -17,7 +19,7 @@ class LoadData(LoadDataInterface):
 
     def read_txt_file(self, index_ranges):
         info("Reading dataset text file (file path = '" + self.test_set_file_path + "')...")
-        sorted_indicies = self.get_sorted_indicies_list(index_ranges)
+        sorted_indicies = LoadDataInterface.get_sorted_indicies_list(index_ranges)
         txt_file = open(self.test_set_file_path, "r")
 
         data = [] # initialize, will store [[image file name, ground truth]]
@@ -34,31 +36,25 @@ class LoadData(LoadDataInterface):
         info("Test set successfully read.")
         return data
 
-    def get_data(self, index_ranges, model_metadata): 
-        images_metadata = self.read_txt_file(index_ranges) # get image file names and ground truths
-        # info("Loading images (directory path = '" + self.img_folder_path + "')...")
-        for i, image in enumerate(images_metadata):
-            x = asarray(load_img(self.img_folder_path + image[0], target_size=(model_metadata['height'], model_metadata['width']), color_mode='rgb'))
-            if (model_metadata['bgr']):
+    def _get_data(self):
+        for i, image in enumerate(self.images_metadata):
+            x = asarray(load_img(self.img_folder_path + image[0], target_size=(self.model_metadata['height'], self.model_metadata['width']), color_mode='rgb'))
+            if (self.model_metadata['bgr']):
                 x = asarray(cvtColor(x, COLOR_RGB2BGR))
-            if (model_metadata['bounds'] != (0, 255)):
-                x = self.preprocessing(x, model_metadata['bounds'])
-            y = images_metadata[i][1]
+            if (self.model_metadata['bounds'] != (0, 255)):
+                x = self.preprocessing(x, self.model_metadata['bounds'])
+            y = self.images_metadata[i][1]
             yield x, y
 
-        # x = list(map(lambda x: asarray(load_img(self.img_folder_path + x[0], target_size=(model_metadata['height'], model_metadata['width']), color_mode='rgb')), images_metadata)) # load images for file names in meta_data
-        # if (model_metadata['bgr']):
-        #     x = asarray(list(map(lambda x: cvtColor(x, COLOR_RGB2BGR), x)))
-        # y = asarray(list(map(lambda x: x[1], images_metadata))) # unpack ground truths from meta_data
-        # info("Images successfully loaded.")
-        # if (model_metadata['bounds'] != (0, 255)):
-        #     x = self.preprocessing(x, model_metadata['bounds'])
-        # return x, y
+    def get_data(self, index_ranges, model_metadata): 
+        self.model_metadata = model_metadata
+        self.images_metadata = self.read_txt_file(index_ranges) # get image file names and ground truths
+        return self._get_data
 
-    def preprocessing(self, x, bounds=(0, 1), dtype=float32):
+    def preprocessing(self, image, bounds=(0, 1), dtype=float32):
         info("Preprocessing image bounds.")
         divisor = 255/(bounds[1] - bounds[0])
-        return array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + bounds[0], j)), dtype=dtype), i))), x)))
+        return array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + bounds[0], j)), dtype=dtype), i))), image)))
 
     def _save_dir(self):
         save_dir = Path(dirname(__file__) + "/tmp/saved_input_data/")
@@ -69,18 +65,23 @@ class LoadData(LoadDataInterface):
         save_dir = self._save_dir()
         return save_dir/(name + ".txt")
 
-    def save(self, x, y, name):
-        # with open(self.test_set_file_path, "ab") as fn:
-        #     for data in data_generator:
-        #         fn.write(data)
-        data = list(zip(x, y))
+    def save(self, data_generator, name):
+        data = []
+        for sample in data_generator:
+            data.append(sample)
         with open(str(self._save_file(name)), "wb") as fn: 
             dump(data, fn)
 
-    def load(self, name):
+    def _load(self):
+        for x, y in self.loaded_data:
+            yield x, y
+
+    def load(self, name, index_ranges):
         with open(str(self._save_file(name)), "rb") as fn: 
-            data = load(fn)
-        return array(list(map(lambda x: x[0], data))), array(list(map(lambda y: y[1], data)))
+            self.loaded_data = load(fn)
+        sorted_indicies = LoadDataInterface.get_sorted_indicies_list(index_ranges)
+        self.loaded_data = list(map(lambda x: x[1], filter(lambda x: x[0] in sorted_indicies, enumerate(self.loaded_data))))
+        return self._load
 
     # end of session clean up
     def close(self): 

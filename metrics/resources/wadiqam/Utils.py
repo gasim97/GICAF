@@ -2,7 +2,7 @@
 PyTorch 1.1 implementation of the following paper:
 Bosse S, Maniry D, Müller K R, et al. Deep neural networks for no-reference and full-reference image quality assessment.
 IEEE Transactions on Image Processing, 2018, 27(1): 206-219.
-    Implemented by Dingquan Li
+    Initial Implementation by Dingquan Li
     Email: dingquanli@pku.edu.cn
     Date: 09/09/2019
 ------
@@ -179,4 +179,3 @@ class FRnet(nn.Module):
                 q[i*n_patches:(i+1)*n_patches] = h
 
         return q
-

@@ -7,16 +7,17 @@ from os.path import dirname
 
 class Logger(LoggerInterface):
     
-    def __init__(self, metric_collector): 
+    def __init__(self, metric_collector=None): 
         self.logs = []
         self.saved = False
         self.metric_collector = metric_collector
 
     # new log
     def nl(self, fields):
-        metric_list = self.metric_collector.get_metric_list()
-        for metric in metric_list:
-            fields.append(metric)
+        if self.metric_collector:
+            metric_list = self.metric_collector.get_metric_list()
+            for metric in metric_list:
+                fields.append(metric)
         new_log = DataFrame(columns=fields)
         self.logs.append(new_log)
         info("New log (" + str(len(self.logs)) + ") with columns:\n" + str(fields) + "\n\n")
@@ -24,7 +25,7 @@ class Logger(LoggerInterface):
     # log new item
     def append(self, data, image, adversarial_image): 
         self.saved = False
-        metric_results = self.metric_collector.collect_metrics(image, adversarial_image)
+        metric_results = self.metric_collector(image, adversarial_image)
         data.update(metric_results)
         log = self.logs[-1]
         index = len(log)

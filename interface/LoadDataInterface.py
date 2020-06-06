@@ -7,6 +7,28 @@ class LoadDataInterface:
     @classmethod
     def version(cls): return "1.0"
 
+    @classmethod
+    def get_sorted_indicies_list(cls, index_ranges):
+        """
+        Get a list of indicies unpacked from the index ranges
+
+        Parameters
+        ----------
+            index_ranges : list of 2-tuples with elements of type int
+                List of tuples each containing (start index, end index)
+        Returns
+        -------
+            indicies : list
+                List of indicies unpacked from index_ranges
+        Example
+        -------
+            For input index_ranges = [(1, 3), (9, 11), (5, 7), (6, 7)]
+            returns indicies = [1, 2, 3, 5, 6, 7, 9, 10, 11]
+        """
+        indicies = [val for sublist in array(list(map(lambda x: arange(x[0], x[1] + 1), index_ranges))) for val in sublist] # unpack the index ranges to a list of indicies
+        indicies = sorted(list(dict.fromkeys(indicies))) # remove duplicate indicies, incase inputed index ranges overlap, and sort
+        return indicies
+
     @abstractmethod
     def __init__(self, ground_truth_file_path="", img_folder_path=""): 
         """
@@ -43,25 +65,31 @@ class LoadDataInterface:
                 Model metadata dictionary populated as specified in ModelInterface.py
         Returns
         -------
-            images : numpy.ndarray
-                Loaded images in the correct format, i.e. preprocessing for model input
-                size and value bounds 
-            ground truths : numpy.ndarray
-                The ground truths of the loaded images
+            data_generator : generator function
+                Yields
+                ------
+                    image : numpy.ndarray
+                        Loaded image in the correct format, i.e. preprocessing for model input
+                        size and value bounds 
+                    ground truth : int
+                        The ground truth of the loaded image
         """
         raise NotImplementedError("Loading module get_data() function missing")
 
     @abstractmethod
-    def save(self, x, y, name): 
+    def save(self, data_generator, name): 
         """
         Save preprocessed input data
 
         Parameters
         ----------
-            x : numpy.ndarray
-                Images
-            y: numpy.ndarray
-                Ground-truths
+            data_generator : generator function
+                Yields
+                ------
+                    x : numpy.ndarray
+                        Image
+                    y : int
+                        Ground-truth of x
             name : string
                 Output file name
         """
@@ -78,33 +106,15 @@ class LoadDataInterface:
                 Input file name
         Returns
         -------
-            images : numpy.ndarray
-                Loaded images in BGR format
-            ground truths: numpy.ndarray
-                The ground truths of the loaded images
+            data_generator : generator function
+                Yields
+                ------
+                    image : numpy.ndarray
+                        Loaded images in BGR format
+                    ground truth : int
+                        The ground truth of the loaded image
         """
         raise NotImplementedError("Loading module load function missing") 
-
-    def get_sorted_indicies_list(self, index_ranges):
-        """
-        Get a list of indicies unpacked from the index ranges
-
-        Parameters
-        ----------
-            index_ranges : list of 2-tuples with elements of type int
-                List of tuples each containing (start index, end index)
-        Returns
-        -------
-            indicies : list
-                List of indicies unpacked from index_ranges
-        Example
-        -------
-            For input index_ranges = [(1, 3), (9, 11), (5, 7), (6, 7)]
-            returns indicies = [1, 2, 3, 5, 6, 7, 9, 10, 11]
-        """
-        indicies = [val for sublist in array(list(map(lambda x: arange(x[0], x[1] + 1), index_ranges))) for val in sublist] # unpack the index ranges to a list of indicies
-        indicies = sorted(list(dict.fromkeys(indicies))) # remove duplicate indicies, incase inputed index ranges overlap, and sort
-        return indicies
 
     @abstractmethod
     def close(self): 
