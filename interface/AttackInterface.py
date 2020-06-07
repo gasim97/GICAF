@@ -1,3 +1,7 @@
+from typing import Optional, Dict, Any
+from gicaf.interface.ModelInterface import ModelInterface
+from gicaf.interface.LoggerInterface import LoggerInterface
+import numpy as np
 from abc import ABCMeta, abstractmethod
 
 class AttackInterface:
@@ -7,20 +11,25 @@ class AttackInterface:
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, attack_parameters=None): 
+    def __init__(self, attack_parameters: Optional[Dict[str, Any]] = None) -> None: 
         """
         Initialize attack
 
         Parameters
         ----------
-            attack_parameters : dict
+            attack_parameters : optional dict
                 A dictionary containing attack parameters. Default is None. As
                 such Attack modules must have default parameter values
         """
         raise NotImplementedError("Attack module __init__() function missing")
 
     @abstractmethod
-    def __call__(self, image, model, logger, memory_logger, query_limit=5000): 
+    def __call__(self, 
+        image: np.ndarray, 
+        model: ModelInterface, 
+        logger: LoggerInterface, 
+        query_limit: int = 5000
+    ) -> Optional[np.ndarray]: 
         """
         Runs the attack
 

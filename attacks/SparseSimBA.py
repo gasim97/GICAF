@@ -27,7 +27,7 @@ class SparseSimBA(AttackInterface):
         self.bounds = self.model.metadata['bounds']
         self.logger = logger
 
-        setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size))) #for deep recursion diretion sampling
+        setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
 
         top_preds = self.model.get_top_5(image)
 

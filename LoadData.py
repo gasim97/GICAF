@@ -5,7 +5,7 @@ from logging import info
 from keras.preprocessing.image import load_img
 from pickle import dump, load
 from pathlib import Path
-from os.path import dirname
+from os.path import abspath, dirname
 
 # TODO 
 # Improve preprocessing options? 
@@ -13,9 +13,14 @@ from os.path import dirname
 
 class LoadData(LoadDataInterface):
 
-    def __init__(self, test_set_file_path="", img_folder_path=""):
-        self.test_set_file_path = test_set_file_path
-        self.img_folder_path = img_folder_path
+    def __init__(self, test_set_file_path=None, img_folder_path=None):
+        if test_set_file_path and img_folder_path:
+            self.test_set_file_path = test_set_file_path
+            self.img_folder_path = img_folder_path
+            return
+        parentdir = abspath('')
+        self.test_set_file_path = parentdir + "/data/val.txt"
+        self.img_folder_path = parentdir + "/data/ILSVRC2012_img_val/"
 
     def read_txt_file(self, index_ranges):
         info("Reading dataset text file (file path = '" + self.test_set_file_path + "')...")
@@ -76,11 +81,12 @@ class LoadData(LoadDataInterface):
         for x, y in self.loaded_data:
             yield x, y
 
-    def load(self, name, index_ranges):
+    def load(self, name, index_ranges=None):
         with open(str(self._save_file(name)), "rb") as fn: 
             self.loaded_data = load(fn)
-        sorted_indicies = LoadDataInterface.get_sorted_indicies_list(index_ranges)
-        self.loaded_data = list(map(lambda x: x[1], filter(lambda x: x[0] in sorted_indicies, enumerate(self.loaded_data))))
+        if index_ranges:
+            sorted_indicies = LoadDataInterface.get_sorted_indicies_list(index_ranges)
+            self.loaded_data = list(map(lambda x: x[1], filter(lambda x: x[0] in sorted_indicies, enumerate(self.loaded_data))))
         return self._load
 
     # end of session clean up

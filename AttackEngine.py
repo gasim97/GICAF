@@ -1,13 +1,23 @@
+from typing import Callable, List, Tuple, Optional
 from gicaf.interface.AttackEngineInterface import AttackEngineInterface
+from gicaf.interface.ModelInterface import ModelInterface
+from gicaf.interface.AttackInterface import AttackInterface
+from gicaf.interface.LoggerInterface import LoggerInterface
 from gicaf.Logger import Logger
 from gicaf.MetricCollector import MetricCollector
-from numpy import array
+import numpy as np
 from copy import deepcopy
 from logging import info
 
 class AttackEngine(AttackEngineInterface):
 
-    def __init__(self, data_generator, model, attacks, save=True): 
+    def __init__(
+        self, 
+        data_generator: Callable[None, Tuple[np.ndarray, int]], 
+        model: ModelInterface, 
+        attacks: List[AttackInterface],
+        save: bool = True
+    ) -> None:  
         self.data_generator = data_generator
         self.model = model
         self.attacks = attacks
@@ -18,9 +28,9 @@ class AttackEngine(AttackEngineInterface):
             'correct': [],
             'incorrect': [],
         }
-        self._filter_wrong_predictions()
+        self._filter_predictions()
 
-    def _filter_wrong_predictions(self):
+    def _filter_predictions(self):
         for i, (x, y) in enumerate(self.data_generator()):
             if self.model.get_top_1(x)[0] == y:
                 self.pred_result_indicies['correct'].append(i)
@@ -30,7 +40,11 @@ class AttackEngine(AttackEngineInterface):
         info(str(len(self.pred_result_indicies['correct'])) + " out of " + str(count + 1) + 
             " samples correctly predicted and will be used for an attack")
 
-    def run(self, metric_names=None, use_memory=False): 
+    def run(
+        self, 
+        metric_names: Optional[List[str]] = None, 
+        use_memory: bool = False
+    ) -> Tuple[List[LoggerInterface], List[float]]: 
         metric_collector = MetricCollector(self.model, metric_names)
         for attack in self.attacks:
             self.loggers.append(Logger(metric_collector=metric_collector))

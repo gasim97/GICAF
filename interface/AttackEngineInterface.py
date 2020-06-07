@@ -1,3 +1,8 @@
+from typing import Callable, List, Tuple, Optional
+from gicaf.interface.ModelInterface import ModelInterface
+from gicaf.interface.AttackInterface import AttackInterface
+from gicaf.interface.LoggerInterface import LoggerInterface
+import numpy as np
 from abc import ABCMeta, abstractmethod
 
 class AttackEngineInterface:
@@ -7,7 +12,13 @@ class AttackEngineInterface:
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, data_generator, model, attacks): 
+    def __init__(
+        self, 
+        data_generator: Callable[None, Tuple[np.ndarray, int]], 
+        model: ModelInterface, 
+        attacks: List[AttackInterface],
+        save: bool = True
+    ) -> None: 
         """
         Initialize attack engine
 
@@ -29,7 +40,11 @@ class AttackEngineInterface:
         raise NotImplementedError("AttackEngine module __init__() function missing")
 
     @abstractmethod
-    def run(self, metric_names=None, use_memory=False): 
+    def run(
+        self, 
+        metric_names: Optional[List[str]] = None, 
+        use_memory: bool = False
+    ) -> Tuple[List[LoggerInterface], List[float]]: 
         """
         Runs the attack
 
@@ -46,8 +61,8 @@ class AttackEngineInterface:
         -------
             loggers : list with elements of type LoggerInterface
                 The experiment logs
-            success_rates : list with elements of type LoggerInterface
-                The experiment adversarial success rates
+            success_rates : list with elements of type float
+                The experiment adversarial success rates in percentage
         Note
         ----
             This method must call 'self.model.reset_query_count()' before each attack to
@@ -56,7 +71,7 @@ class AttackEngineInterface:
         raise NotImplementedError("AttackEngine module run() function missing")
 
     @abstractmethod
-    def get_logs(self):
+    def get_logs(self) -> List[LoggerInterface]:
         """
         Get experiment logs
 

@@ -16,7 +16,7 @@ class HNSSimBA(SparseSimBA):
         self.bounds = self.model.metadata['bounds']
         self.logger = logger
 
-        setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*2))) #for deep recursion diretion sampling
+        setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
         
         top_preds = self.model.get_top_5(image)
 
@@ -98,49 +98,49 @@ class HNSSimBA(SparseSimBA):
                 
         return None
 
-    # def hessian(self, x):
-    #     """
-    #     Calculate the hessian matrix with finite differences
-    #     Parameters:
-    #     - x : ndarray
-    #     Returns:
-    #     an array of shape (x.dim, x.ndim) + x.shape
-    #     where the array[i, j, ...] corresponds to the second derivative x_ij
-    #     """
-    #     x_grad = gradient(x) 
-    #     hessian = empty((x.ndim, x.ndim) + x.shape, dtype=x.dtype) 
-    #     for k, grad_k in enumerate(x_grad):
-    #         # iterate over dimensions
-    #         # apply gradient again to every component of the first derivative.
-    #         tmp_grad = gradient(grad_k) 
-    #         for l, grad_kl in enumerate(tmp_grad):
-    #             hessian[k, l, :, :] = grad_kl
-    #     return hessian
+    def hessian(self, x):
+        """
+        Calculate the hessian matrix with finite differences
+        Parameters:
+        - x : ndarray
+        Returns:
+        an array of shape (x.dim, x.ndim) + x.shape
+        where the array[i, j, ...] corresponds to the second derivative x_ij
+        """
+        x_grad = gradient(x) 
+        hessian = empty((x.ndim, x.ndim) + x.shape, dtype=x.dtype) 
+        for k, grad_k in enumerate(x_grad):
+            # iterate over dimensions
+            # apply gradient again to every component of the first derivative.
+            tmp_grad = gradient(grad_k) 
+            for l, grad_kl in enumerate(tmp_grad):
+                hessian[k, l, :, :] = grad_kl
+        return hessian
 
-    # def calcHS(self, image, label):
-    #     preds = empty((self.height, self.width, self.channels))
-    #     y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
-    #     for a in range(self.height):
-    #         for b in range(self.width):
-    #             for c in range(self.channels):
-    #                 q = self.q_direction(a, b, c)
-    #                 x = clip(image + (self.epsilon * q), self.bounds[0], self.bounds[1])
-    #                 preds[a][b][c] = array(list(map(lambda p: p[1], self.model.get_preds(x))))
+    def calcHS(self, image, label):
+        preds = empty((self.height, self.width, self.channels))
+        y = array(list(map(lambda i: 0 if i != label else 1, range(len(preds[0])))))
+        for a in range(self.height):
+            for b in range(self.width):
+                for c in range(self.channels):
+                    q = self.q_direction(a, b, c)
+                    x = clip(image + (self.epsilon * q), self.bounds[0], self.bounds[1])
+                    preds[a][b][c] = array(list(map(lambda p: p[1], self.model.get_preds(x))))
 
-    #     betas = linspace(0.1, 2, 20)
-    #     max_norm = 0
-    #     for beta in betas:
-    #         losses = empty((self.height, self.width, self.channels))
-    #         for a in range(self.height):
-    #             for b in range(self.width):
-    #                 for c in range(self.channels):
-    #                     losses[a][b][c] = dot(-y.T, log(softmax(beta*log(preds[a][b][c]))))
-    #         hessian_norm = norm(self.hessian(losses))
-    #         print('beta, hessian norm: ' + str(beta) + ', ' + str(hessian_norm))
-    #         if (hessian_norm > max_norm):
-    #             max_norm = hessian_norm
-    #             self.beta = beta
-    #     print('Selected beta: ' + str(self.beta))
+        betas = linspace(0.1, 2, 20)
+        max_norm = 0
+        for beta in betas:
+            losses = empty((self.height, self.width, self.channels))
+            for a in range(self.height):
+                for b in range(self.width):
+                    for c in range(self.channels):
+                        losses[a][b][c] = dot(-y.T, log(softmax(beta*log(preds[a][b][c]))))
+            hessian_norm = norm(self.hessian(losses))
+            print('beta, hessian norm: ' + str(beta) + ', ' + str(hessian_norm))
+            if (hessian_norm > max_norm):
+                max_norm = hessian_norm
+                self.beta = beta
+        print('Selected beta: ' + str(self.beta))
 
     def calcHSApprox(self, image, label):
         delta = full([self.height, self.width, self.channels], self.epsilon/(self.height*self.width*self.channels))
@@ -211,3 +211,11 @@ class HNSSimBA(SparseSimBA):
             p = p_test #update new p 
             success = True
         return delta, p, top_5_preds, success
+
+    def q_direction(self, a, b, c):
+        q = zeros((self.height, self.width, self.channels))
+        for i in range(self.size):
+            for j in range(self.size):
+                q[a*self.size+i, b*self.size+j, c] = 1
+        q = q/norm(q)
+        return q

@@ -96,7 +96,7 @@ class LoadDataInterface:
         raise NotImplementedError("Loading module save function missing") 
 
     @abstractmethod
-    def load(self, name): 
+    def load(self, name, index_ranges=None): 
         """
         Load saved preprocessed input data
 
@@ -104,6 +104,10 @@ class LoadDataInterface:
         ----------
             name : string
                 Input file name
+            index_ranges : list of 2-tuples with elements of type int
+                Specifies the indicies of the data to load, each tuple contains 
+                (start index, end index) both inclusive. Default is None and
+                corresponds to loading all samples
         Returns
         -------
             data_generator : generator function
