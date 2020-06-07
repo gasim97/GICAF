@@ -59,7 +59,7 @@ class AttackEngine(AttackEngineInterface):
                             pass
                     self.model.reset_query_count()
                     adv = attack(x, self.model, self.loggers[-1])
-                    if type(adv) == type(None):
+                    if type(adv) != type(None):
                         num_success += 1
                         if use_memory:
                             memory[str(y)] = adv - x
