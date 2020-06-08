@@ -1,7 +1,6 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-class MetricInterface:
-    __metaclass__ = ABCMeta
+class MetricBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -25,7 +24,7 @@ class MetricInterface:
             adversarial_image : numpy.ndarray
                 Adversarial image at current step
             model_metadata : dict
-                Model metadata dictionary populated as specified in ModelInterface.py
+                Model metadata dictionary populated as specified in ModelBase.py
         Returns
         -------
             result : float

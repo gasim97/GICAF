@@ -1,11 +1,11 @@
-from gicaf.interface.LoggerInterface import LoggerInterface
+from gicaf.interface.LoggerBase import LoggerBase
 from pandas import DataFrame
 from logging import info
 from pickle import dump, load
 from pathlib import Path
 from os.path import dirname
 
-class Logger(LoggerInterface):
+class Logger(LoggerBase):
     
     def __init__(self, metric_collector=None): 
         self.logs = []

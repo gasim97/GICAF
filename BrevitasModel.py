@@ -1,4 +1,4 @@
-from gicaf.interface.ModelInterface import PyTorchModel
+from gicaf.interface.ModelBase import PyTorchModel
 import torch
 import torch.nn as nn
 import torch.optim as optim

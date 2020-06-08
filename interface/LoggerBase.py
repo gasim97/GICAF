@@ -1,7 +1,6 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-class LoggerInterface:
-    __metaclass__ = ABCMeta
+class LoggerBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -40,7 +39,7 @@ class LoggerInterface:
         ----------
             data : dict
                 Data to append to the current log. The fields must match those
-                provided in the last call to LoggerInterface.nl(fields)
+                provided in the last call to LoggerBase.nl(fields)
             image : numpy.ndarray
                 Reference image
             adversarial_image : numpy.ndarray

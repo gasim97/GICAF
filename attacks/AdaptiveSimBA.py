@@ -1,11 +1,11 @@
-from gicaf.interface.AttackInterface import AttackInterface
+from gicaf.interface.AttackBase import AttackBase
 from sys import setrecursionlimit
 from numpy import clip, argwhere, zeros, array
 from numpy.linalg import norm
 from numpy.random import randint
 import time
 
-class AdaptiveSimBA(AttackInterface):
+class AdaptiveSimBA(AttackBase):
 
     def __init__(self, size=1, epsilon=64, query_limit=5000): 
         self.size = size

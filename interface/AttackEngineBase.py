@@ -1,12 +1,11 @@
-from typing import Callable, List, Tuple, Optional
-from gicaf.interface.ModelInterface import ModelInterface
-from gicaf.interface.AttackInterface import AttackInterface
-from gicaf.interface.LoggerInterface import LoggerInterface
+from typing import Callable, List, Tuple, Optional, Type
+from gicaf.interface.ModelBase import ModelBase
+from gicaf.interface.AttackBase import AttackBase
+from gicaf.interface.LoggerBase import LoggerBase
 import numpy as np
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-class AttackEngineInterface:
-    __metaclass__ = ABCMeta
+class AttackEngineBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -15,8 +14,8 @@ class AttackEngineInterface:
     def __init__(
         self, 
         data_generator: Callable[None, Tuple[np.ndarray, int]], 
-        model: ModelInterface, 
-        attacks: List[AttackInterface],
+        model: ModelBase, 
+        attacks: List[Type[AttackBase]],
         save: bool = True
     ) -> None: 
         """
@@ -32,9 +31,9 @@ class AttackEngineInterface:
                         Image to use for attacks
                     y : int
                         Ground-truth of x 
-            model : ModelInterface
+            model : ModelBase
                 Model to carry out attacks on
-            attacks : list with elements of type AttackInterface
+            attacks : list with elements of type AttackBase
                 Attacks to carry out
         """
         raise NotImplementedError("AttackEngine module __init__() function missing")
@@ -44,7 +43,7 @@ class AttackEngineInterface:
         self, 
         metric_names: Optional[List[str]] = None, 
         use_memory: bool = False
-    ) -> Tuple[List[LoggerInterface], List[float]]: 
+    ) -> Tuple[List[Type[LoggerBase]], List[float]]: 
         """
         Runs the attack
 
@@ -59,7 +58,7 @@ class AttackEngineInterface:
                 be transfered between different attack methods. Default is False
         Returns
         -------
-            loggers : list with elements of type LoggerInterface
+            loggers : list with elements of type LoggerBase
                 The experiment logs
             success_rates : list with elements of type float
                 The experiment adversarial success rates in percentage
@@ -71,13 +70,13 @@ class AttackEngineInterface:
         raise NotImplementedError("AttackEngine module run() function missing")
 
     @abstractmethod
-    def get_logs(self) -> List[LoggerInterface]:
+    def get_logs(self) -> List[Type[LoggerBase]]:
         """
         Get experiment logs
 
         Returns
         -------
-            loggers : list with elements of type LoggerInterface
+            loggers : list with elements of type LoggerBase
                 The experiment logs
         """
         raise NotImplementedError("Attack module get_logs() function missing")

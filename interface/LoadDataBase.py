@@ -1,8 +1,7 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from numpy import array, arange
 
-class LoadDataInterface:
-    __metaclass__ = ABCMeta
+class LoadDataBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -62,7 +61,7 @@ class LoadDataInterface:
                 Specifies the indicies of the data to load, each tuple contains 
                 (start index, end index) both inclusive
             model_metadata : dict
-                Model metadata dictionary populated as specified in ModelInterface.py
+                Model metadata dictionary populated as specified in ModelBase.py
         Returns
         -------
             data_generator : generator function

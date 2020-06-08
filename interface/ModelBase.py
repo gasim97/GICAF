@@ -1,10 +1,9 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from numpy import array, arange, flip, expand_dims, float32
 from scipy.special import softmax
 from copy import deepcopy
 
-class ModelInterface:
-    __metaclass__ = ABCMeta
+class ModelBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -202,7 +201,7 @@ class ModelInterface:
     def get_query_count(self):
         return self.query_count
 
-class KerasModel(ModelInterface):
+class KerasModel(ModelBase):
 
     def __init__(self, kmodel, metadata): 
         self.metadata = metadata
@@ -212,16 +211,16 @@ class KerasModel(ModelInterface):
     def get_preds(self, image):
         preds = self.model.predict(image)
         self.increment_query_count(1)
-        return ModelInterface.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
+        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
         preds = self.model.predict(images)
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda x: ModelInterface.zip_indicies_to_preds(x), 
+            lambda x: ModelBase.zip_indicies_to_preds(x), 
             preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
 
-class TfLiteModel(ModelInterface):
+class TfLiteModel(ModelBase):
 
     def __init__(self, interpreter, metadata): 
         self.metadata = metadata
@@ -241,15 +240,15 @@ class TfLiteModel(ModelInterface):
     def get_preds(self, image):
         preds = self._evaluate(image)
         self.increment_query_count(1)
-        return ModelInterface.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
+        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda img: ModelInterface.zip_indicies_to_preds(self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))), 
+            lambda img: ModelBase.zip_indicies_to_preds(self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))), 
             images)))
 
-class PyTorchModel(ModelInterface):
+class PyTorchModel(ModelBase):
 
     def __init__(self, model, metadata): 
         self.metadata = metadata
@@ -260,11 +259,11 @@ class PyTorchModel(ModelInterface):
     def get_preds(self, image):
         preds = self.model([image]).detach().numpy()[0]
         self.increment_query_count(1)
-        return ModelInterface.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
+        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
     def get_preds_batch(self, images): 
         preds = self.model(images).detach().numpy()
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda x: ModelInterface.zip_indicies_to_preds(x), 
+            lambda x: ModelBase.zip_indicies_to_preds(x), 
             preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))

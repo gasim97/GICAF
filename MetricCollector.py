@@ -1,4 +1,4 @@
-from gicaf.interface.MetricCollectorInterface import MetricCollectorInterface
+from gicaf.interface.MetricCollectorBase import MetricCollectorBase
 import gicaf.metrics.PNorm as PNorm
 import gicaf.metrics.PSNR as PSNR
 import gicaf.metrics.SSIM as SSIM
@@ -13,7 +13,7 @@ metric_list = {
     "wadiqam": WaDIQaM.WaDIQaM,
 }
 
-class MetricCollector(MetricCollectorInterface):
+class MetricCollector(MetricCollectorBase):
 
     @classmethod
     def supported_metrics(cls): return metric_list.keys()

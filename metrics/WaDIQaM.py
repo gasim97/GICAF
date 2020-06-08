@@ -1,8 +1,8 @@
-from gicaf.interface.MetricInterface import MetricInterface
+from gicaf.interface.MetricBase import MetricBase
 from gicaf.metrics.resources.wadiqam import Utils
 from cv2 import cvtColor, COLOR_BGR2RGB
 
-class WaDIQaM(MetricInterface):
+class WaDIQaM(MetricBase):
 
     def __init__(self):
         self.model = Utils.get_FRnet()

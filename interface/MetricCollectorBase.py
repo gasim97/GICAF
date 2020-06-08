@@ -1,7 +1,6 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-class MetricCollectorInterface:
-    __metaclass__ = ABCMeta
+class MetricCollectorBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -13,7 +12,7 @@ class MetricCollectorInterface:
 
         Parameters
         ----------
-            model : ModelInterface
+            model : ModelBase
                 The model instance to be used in the attack
             metric_names : list with elements of type string
                 The names of the metrics to be collected from the internal list that

@@ -1,7 +1,7 @@
-from gicaf.interface.MetricInterface import MetricInterface
+from gicaf.interface.MetricBase import MetricBase
 from skimage.metrics import peak_signal_noise_ratio
 
-class PSNR(MetricInterface):
+class PSNR(MetricBase):
 
     def __call__(self, image, adversarial_image, model_metadata): 
         return peak_signal_noise_ratio(image,

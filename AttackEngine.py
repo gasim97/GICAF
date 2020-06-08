@@ -1,23 +1,23 @@
-from typing import Callable, List, Tuple, Optional
-from gicaf.interface.AttackEngineInterface import AttackEngineInterface
-from gicaf.interface.ModelInterface import ModelInterface
-from gicaf.interface.AttackInterface import AttackInterface
-from gicaf.interface.LoggerInterface import LoggerInterface
+from typing import Callable, List, Tuple, Optional, Type
+from gicaf.interface.AttackEngineBase import AttackEngineBase
+from gicaf.interface.ModelBase import ModelBase
+from gicaf.interface.AttackBase import AttackBase
+from gicaf.interface.LoggerBase import LoggerBase
 from gicaf.Logger import Logger
 from gicaf.MetricCollector import MetricCollector
 import numpy as np
 from copy import deepcopy
 from logging import info
 
-class AttackEngine(AttackEngineInterface):
+class AttackEngine(AttackEngineBase):
 
     def __init__(
         self, 
         data_generator: Callable[None, Tuple[np.ndarray, int]], 
-        model: ModelInterface, 
-        attacks: List[AttackInterface],
+        model: ModelBase, 
+        attacks: List[Type[AttackBase]],
         save: bool = True
-    ) -> None:  
+    ) -> None: 
         self.data_generator = data_generator
         self.model = model
         self.attacks = attacks
@@ -44,7 +44,7 @@ class AttackEngine(AttackEngineInterface):
         self, 
         metric_names: Optional[List[str]] = None, 
         use_memory: bool = False
-    ) -> Tuple[List[LoggerInterface], List[float]]: 
+    ) -> Tuple[List[Type[LoggerBase]], List[float]]: 
         metric_collector = MetricCollector(self.model, metric_names)
         for attack in self.attacks:
             self.loggers.append(Logger(metric_collector=metric_collector))

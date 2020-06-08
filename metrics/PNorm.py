@@ -1,8 +1,8 @@
-from gicaf.interface.MetricInterface import MetricInterface
+from gicaf.interface.MetricBase import MetricBase
 from numpy.linalg import norm
 from numpy import ravel, inf
 
-class AbsValueNorm(MetricInterface):
+class AbsValueNorm(MetricBase):
 
     def __call__(self, image, adversarial_image, model_metadata): 
         img = image
@@ -12,12 +12,12 @@ class AbsValueNorm(MetricInterface):
             adv = ravel(adv)
         return norm(adv - img, 0)
 
-class EuclideanNorm(MetricInterface):
+class EuclideanNorm(MetricBase):
 
     def __call__(self, image, adversarial_image, model_metadata): 
         return norm(adversarial_image - image, 2)
 
-class InfNorm(MetricInterface):
+class InfNorm(MetricBase):
 
     def __call__(self, image, adversarial_image, model_metadata): 
         return norm(adversarial_image - image, inf)

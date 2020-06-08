@@ -1,4 +1,4 @@
-from gicaf.interface.ModelInterface import TfLiteModel
+from gicaf.interface.ModelBase import TfLiteModel
 import gicaf.Utils as utils
 
 class ResNet50(TfLiteModel):

@@ -1,4 +1,4 @@
-from gicaf.interface.LoadDataInterface import LoadDataInterface
+from gicaf.interface.LoadDataBase import LoadDataBase
 from numpy import array, arange, asarray, float32
 from cv2 import cvtColor, COLOR_RGB2BGR
 from logging import info
@@ -11,7 +11,7 @@ from os.path import abspath, dirname
 # Improve preprocessing options? 
 # Update load function to use less memory 
 
-class LoadData(LoadDataInterface):
+class LoadData(LoadDataBase):
 
     def __init__(self, test_set_file_path=None, img_folder_path=None):
         if test_set_file_path and img_folder_path:
@@ -24,7 +24,7 @@ class LoadData(LoadDataInterface):
 
     def read_txt_file(self, index_ranges):
         info("Reading dataset text file (file path = '" + self.test_set_file_path + "')...")
-        sorted_indicies = LoadDataInterface.get_sorted_indicies_list(index_ranges)
+        sorted_indicies = LoadDataBase.get_sorted_indicies_list(index_ranges)
         txt_file = open(self.test_set_file_path, "r")
 
         data = [] # initialize, will store [[image file name, ground truth]]
@@ -85,7 +85,7 @@ class LoadData(LoadDataInterface):
         with open(str(self._save_file(name)), "rb") as fn: 
             self.loaded_data = load(fn)
         if index_ranges:
-            sorted_indicies = LoadDataInterface.get_sorted_indicies_list(index_ranges)
+            sorted_indicies = LoadDataBase.get_sorted_indicies_list(index_ranges)
             self.loaded_data = list(map(lambda x: x[1], filter(lambda x: x[0] in sorted_indicies, enumerate(self.loaded_data))))
         return self._load
 

@@ -1,4 +1,4 @@
-from gicaf.interface.ModelInterface import KerasModel
+from gicaf.interface.ModelBase import KerasModel
 import keras
 from numpy import array
 

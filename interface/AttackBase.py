@@ -1,11 +1,10 @@
-from typing import Optional, Dict, Any
-from gicaf.interface.ModelInterface import ModelInterface
-from gicaf.interface.LoggerInterface import LoggerInterface
+from typing import Optional, Dict, Any, Type
+from gicaf.interface.ModelBase import ModelBase
+from gicaf.interface.LoggerBase import LoggerBase
 import numpy as np
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-class AttackInterface:
-    __metaclass__ = ABCMeta
+class AttackBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
@@ -26,8 +25,8 @@ class AttackInterface:
     @abstractmethod
     def __call__(self, 
         image: np.ndarray, 
-        model: ModelInterface, 
-        logger: LoggerInterface, 
+        model: Type[ModelBase], 
+        logger: Type[LoggerBase], 
         query_limit: int = 5000
     ) -> Optional[np.ndarray]: 
         """
@@ -37,9 +36,9 @@ class AttackInterface:
         ----------
             image : numpy.ndarray
                 Image to carry out attack on
-            model : ModelInterface
-                The model to attack wrapped in an instance of ModelInterface
-            logger: LoggerInterface
+            model : ModelBase
+                The model to attack wrapped in an instance of ModelBase
+            logger: LoggerBase
                 A logger to log experimental data
             query_limit : int
                 The maximum number of model queries allowable to achieve a
