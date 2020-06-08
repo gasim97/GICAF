@@ -7,7 +7,7 @@ from gicaf.Logger import Logger
 from gicaf.MetricCollector import MetricCollector
 import numpy as np
 from copy import deepcopy
-from logging import info
+from logging import info, warning
 
 class AttackEngine(AttackEngineBase):
 
@@ -24,6 +24,7 @@ class AttackEngine(AttackEngineBase):
         self.loggers = []
         self.success_rates = []
         self.save = save
+        self.closed = False
         self.pred_result_indicies = {
             'correct': [],
             'incorrect': [],
@@ -45,6 +46,9 @@ class AttackEngine(AttackEngineBase):
         metric_names: Optional[List[str]] = None, 
         use_memory: bool = False
     ) -> Tuple[List[Type[LoggerBase]], List[float]]: 
+        if self.closed:
+            warning("Cannot run attack engine after it has been closed")
+            return self.loggers, self.success_rates
         metric_collector = MetricCollector(self.model, metric_names)
         for attack in self.attacks:
             self.loggers.append(Logger(metric_collector=metric_collector))
@@ -75,3 +79,4 @@ class AttackEngine(AttackEngineBase):
                 attack.close() 
             for logger in self.loggers:
                 logger.close()
+        self.closed = True

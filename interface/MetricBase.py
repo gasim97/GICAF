@@ -5,7 +5,6 @@ class MetricBase(ABC):
     @classmethod
     def version(cls): return "1.0"
 
-    @abstractmethod
     def __init__(self):
         """
         Initialize metric
@@ -30,4 +29,4 @@ class MetricBase(ABC):
             result : float
                 Result
         """
-        raise NotImplementedError("Metric module __call__() function missing")
+        ...

@@ -25,7 +25,7 @@ class MetricCollectorBase(ABC):
             This method must create the following variables:
                 self.metadata = metadata
         """
-        raise NotImplementedError("MetricCollector module __init__() function missing")
+        ...
 
     @abstractmethod
     def __call__(self, image, adversarial_image): 
@@ -49,7 +49,7 @@ class MetricCollectorBase(ABC):
             e.g.: 
                 'model queries': self.model.get_query_count()
         """
-        raise NotImplementedError("MetricCollector module collect_metrics() function missing")
+        ...
 
     @abstractmethod
     def get_metric_list(self):
@@ -61,4 +61,4 @@ class MetricCollectorBase(ABC):
             metric_names : list with elements of type string
                 The metric names of the metrics to be collected
         """
-        raise NotImplementedError("MetricCollector module get_metrics() function missing")
+        ...

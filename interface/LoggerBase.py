@@ -15,7 +15,7 @@ class LoggerBase(ABC):
             metric_collector : MetricCollector
                 Initialised metric collector. Default is None
         """
-        raise NotImplementedError("Logger module __init__() function missing")
+        ...
 
     @abstractmethod
     def nl(self, fields):
@@ -28,7 +28,7 @@ class LoggerBase(ABC):
                 The fields of the new log. The metric names of the metrics to
                 be collected by the MetricCollector should be also be fields
         """
-        raise NotImplementedError("Logger module nl() function missing")
+        ...
 
     @abstractmethod
     def append(self, data, image, adversarial_image): 
@@ -45,7 +45,7 @@ class LoggerBase(ABC):
             adversarial_image : numpy.ndarray
                 Adversarial image at current step
         """
-        raise NotImplementedError("Logger module append() function missing")
+        ...
 
     @abstractmethod
     def get(self): 
@@ -57,7 +57,7 @@ class LoggerBase(ABC):
             log : pandas.DataFrame
                 The last experiment log created/began
         """
-        raise NotImplementedError("Logger module get() function missing")
+        ...
 
     @abstractmethod
     def get_all(self):
@@ -69,14 +69,14 @@ class LoggerBase(ABC):
             logs : list with elements of type pandas.DataFrame
                 The experiment logs
         """ 
-        raise NotImplementedError("Logger module get_all() function missing")
+        ...
 
     @abstractmethod
     def save(self):
         """
         Saves the experiment logs
         """
-        raise NotImplementedError("Logger module save() function missing")
+        ...
 
     @abstractmethod
     def load(self, id):
@@ -88,11 +88,11 @@ class LoggerBase(ABC):
             id : Any
                 An identifier indicating which experiment logs to load
         """
-        raise NotImplementedError("Logger module load() function missing")
+        ...
 
     @abstractmethod
     def close(self):
         """
         End of session clean up
         """
-        pass
+        ...

@@ -20,7 +20,7 @@ class AttackBase(ABC):
                 A dictionary containing attack parameters. Default is None. As
                 such Attack modules must have default parameter values
         """
-        raise NotImplementedError("Attack module __init__() function missing")
+        ...
 
     @abstractmethod
     def __call__(self, 
@@ -48,11 +48,4 @@ class AttackBase(ABC):
             adv : numpy.ndarray or None
                 Adversarial image if successful, or None otherwise
         """
-        raise NotImplementedError("Attack module run() function missing")
-
-    @abstractmethod
-    def close(self): 
-        """
-        End of session clean up
-        """
-        pass
+        ...

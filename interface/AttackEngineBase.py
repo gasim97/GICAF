@@ -36,7 +36,7 @@ class AttackEngineBase(ABC):
             attacks : list with elements of type AttackBase
                 Attacks to carry out
         """
-        raise NotImplementedError("AttackEngine module __init__() function missing")
+        ...
 
     @abstractmethod
     def run(
@@ -67,7 +67,7 @@ class AttackEngineBase(ABC):
             This method must call 'self.model.reset_query_count()' before each attack to
             reset the model's query count
         """
-        raise NotImplementedError("AttackEngine module run() function missing")
+        ...
 
     @abstractmethod
     def get_logs(self) -> List[Type[LoggerBase]]:
@@ -79,11 +79,11 @@ class AttackEngineBase(ABC):
             loggers : list with elements of type LoggerBase
                 The experiment logs
         """
-        raise NotImplementedError("Attack module get_logs() function missing")
+        ...
 
     @abstractmethod
     def close(self): 
         """
         End of session clean up
         """
-        pass
+        ...

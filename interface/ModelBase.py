@@ -60,7 +60,7 @@ class ModelBase(ABC):
                 self.metadata = metadata
                 self.query_count = 0
         """
-        raise NotImplementedError("Model module __init__() function missing")
+        ...
 
     @abstractmethod
     def get_preds(self, image):
@@ -80,7 +80,7 @@ class ModelBase(ABC):
         ----
             This method must call 'self.queries_count(1)' to increment the query count
         """
-        raise NotImplementedError("Model module get_preds() function missing")
+        ...
 
     @abstractmethod
     def get_preds_batch(self, images): 
@@ -100,14 +100,7 @@ class ModelBase(ABC):
         ----
             This method must call 'self.queries_count(len(images))' to increment the query count
         """
-        raise NotImplementedError("Model module get_preds_batch() function missing")
-
-    @abstractmethod
-    def close(self):
-        """
-        End of session clean up
-        """
-        pass
+        ...
 
     def get_top_1(self, image): 
         """
@@ -200,6 +193,12 @@ class ModelBase(ABC):
 
     def get_query_count(self):
         return self.query_count
+
+    def close(self):
+        """
+        End of session clean up
+        """
+        pass
 
 class KerasModel(ModelBase):
 

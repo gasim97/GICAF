@@ -48,7 +48,7 @@ class LoadDataBase(ABC):
                 The absolute path to the folder/directory containing the images to be
                 loaded with file names as in the ground truths file
         """
-        raise NotImplementedError("Loading module __init__() function missing")
+        ...
 
     @abstractmethod
     def get_data(self, index_ranges, height, width): 
@@ -73,7 +73,7 @@ class LoadDataBase(ABC):
                     ground truth : int
                         The ground truth of the loaded image
         """
-        raise NotImplementedError("Loading module get_data() function missing")
+        ...
 
     @abstractmethod
     def save(self, data_generator, name): 
@@ -92,7 +92,7 @@ class LoadDataBase(ABC):
             name : string
                 Output file name
         """
-        raise NotImplementedError("Loading module save function missing") 
+        ...
 
     @abstractmethod
     def load(self, name, index_ranges=None): 
@@ -117,11 +117,11 @@ class LoadDataBase(ABC):
                     ground truth : int
                         The ground truth of the loaded image
         """
-        raise NotImplementedError("Loading module load function missing") 
+        ...
 
     @abstractmethod
     def close(self): 
         """
         End of session clean up
         """
-        raise NotImplementedError("Loading module close() function missing")
+        ...
