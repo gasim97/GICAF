@@ -30,11 +30,11 @@ class MetricCollector(MetricCollectorBase):
         if metric_names == None:
             self.metrics = []
             return
-        try: 
-            self.metrics = list(map(lambda x: (x, metric_list[x]()), metric_names))
-        except KeyError as e:
-            raise NameError("Invalid metric name provided - " + str(e) + ".\n The metrics below are supported:\n" 
-                            + str(metric_list.keys()))
+        for metric in metric_names:
+            if metric not in metric_list:
+                raise NameError("Invalid metric name '" + str(metric) + "' provided.\n The metrics below are supported:\n" 
+                                + str(metric_list.keys()))
+        self.metrics = list(map(lambda x: (x, metric_list[x]()), metric_names))
         for name in metric_names:
           self.metric_names.append(name)
         self.model = model

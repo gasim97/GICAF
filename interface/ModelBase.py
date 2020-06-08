@@ -1,5 +1,6 @@
 from typing import List, Union, Any, Mapping, Union, Tuple
 from abc import ABC, abstractmethod
+from tensorflow.lite.python.interpreter import Interpreter
 from numpy import array, arange, flip, expand_dims, float32, ndarray
 from scipy.special import softmax
 from copy import deepcopy
@@ -262,7 +263,7 @@ class TfLiteModel(ModelBase):
 
     def __init__(
         self, 
-        interpreter: Any, 
+        interpreter: Interpreter, 
         metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
     ) -> None: 
         self.metadata = metadata

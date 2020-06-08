@@ -57,10 +57,8 @@ class AttackEngine(AttackEngineBase):
             for i, (x, y) in enumerate(self.data_generator()):
                 if i in self.pred_result_indicies['correct']:
                     if use_memory:
-                        try:
+                        if str(y) in memory:
                             x = x + memory[str(y)]
-                        except KeyError:
-                            pass
                     self.model.reset_query_count()
                     adv = attack(x, self.model, self.loggers[-1])
                     if type(adv) != type(None):
