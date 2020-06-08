@@ -13,11 +13,11 @@ class AttackEngine(AttackEngineBase):
 
     def __init__(
         self, 
-        data_generator: Callable[None, Tuple[np.ndarray, int]], 
+        data_generator: Callable[[None], Tuple[np.ndarray, int]], 
         model: Type[ModelBase], 
         attacks: List[Type[AttackBase]],
         save: bool = True
-    ) -> None: 
+    ) -> None:
         self.data_generator = data_generator
         self.model = model
         self.attacks = attacks
@@ -31,7 +31,7 @@ class AttackEngine(AttackEngineBase):
         }
         self._filter_predictions()
 
-    def _filter_predictions(self):
+    def _filter_predictions(self) -> None:
         for i, (x, y) in enumerate(self.data_generator()):
             if self.model.get_top_1(x)[0] == y:
                 self.pred_result_indicies['correct'].append(i)
@@ -70,10 +70,10 @@ class AttackEngine(AttackEngineBase):
             self.success_rates.append(100*num_success/len(self.pred_result_indicies['correct']))
         return self.loggers, self.success_rates
 
-    def get_logs(self):
+    def get_logs(self) -> List[Type[LoggerBase]]:
         return self.loggers
 
-    def close(self):
+    def close(self) -> None:
         if self.save:
             for attack in self.attacks:
                 attack.close() 

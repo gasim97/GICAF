@@ -13,10 +13,10 @@ class AttackEngineBase(ABC):
     @abstractmethod
     def __init__(
         self, 
-        data_generator: Callable[None, Tuple[np.ndarray, int]], 
+        data_generator: Callable[[None], Tuple[np.ndarray, int]], 
         model: Type[ModelBase], 
         attacks: List[Type[AttackBase]],
-        save: bool = True
+        save: bool=True
     ) -> None: 
         """
         Initialize attack engine
@@ -82,7 +82,7 @@ class AttackEngineBase(ABC):
         ...
 
     @abstractmethod
-    def close(self): 
+    def close(self) -> None: 
         """
         End of session clean up
         """
