@@ -14,7 +14,7 @@ class AttackEngineBase(ABC):
     def __init__(
         self, 
         data_generator: Callable[None, Tuple[np.ndarray, int]], 
-        model: ModelBase, 
+        model: Type[ModelBase], 
         attacks: List[Type[AttackBase]],
         save: bool = True
     ) -> None: 
