@@ -1,18 +1,25 @@
+from typing import Mapping, Union, Tuple
 from abc import ABC, abstractmethod
+from numpy import ndarray
 
 class MetricBase(ABC):
 
     @classmethod
     def version(cls): return "1.0"
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize metric
         """
         pass
 
     @abstractmethod
-    def __call__(self, image, adversarial_image, model_metadata): 
+    def __call__(
+        self, 
+        image: ndarray, 
+        adversarial_image: ndarray, 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> float: 
         """
         Run visual quality assessment metric
 

@@ -4,7 +4,7 @@ from numpy import array
 
 class ResNet50(KerasModel):
 
-    def __init__(self): 
+    def __init__(self) -> None: 
         keras.backend.set_learning_phase(0)
         super(ResNet50, self).__init__(kmodel=keras.applications.resnet50.ResNet50(weights='imagenet'),
                                         metadata={'height': 224, 
@@ -14,6 +14,5 @@ class ResNet50(KerasModel):
                                                     'bgr': True, 
                                                     'classes': 1000, 
                                                     'apply_softmax': False,
-                                                    'bounds': (0, 255),
                                                     'weight_bits': 32,
                                                     'activation_bits': 32})

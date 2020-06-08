@@ -2,8 +2,8 @@ from typing import Callable, List, Tuple, Optional, Type
 from gicaf.interface.ModelBase import ModelBase
 from gicaf.interface.AttackBase import AttackBase
 from gicaf.interface.LoggerBase import LoggerBase
-import numpy as np
 from abc import ABC, abstractmethod
+from numpy import ndarray
 
 class AttackEngineBase(ABC):
 
@@ -13,10 +13,10 @@ class AttackEngineBase(ABC):
     @abstractmethod
     def __init__(
         self, 
-        data_generator: Callable[[None], Tuple[np.ndarray, int]], 
+        data_generator: Callable[[None], Tuple[ndarray, int]], 
         model: Type[ModelBase], 
         attacks: List[Type[AttackBase]],
-        save: bool=True
+        save: bool = True
     ) -> None: 
         """
         Initialize attack engine

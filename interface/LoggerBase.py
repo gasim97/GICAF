@@ -1,4 +1,8 @@
+from typing import Optional, Type, List, Any, Mapping
+from gicaf.interface.MetricCollectorBase import MetricCollectorBase
 from abc import ABC, abstractmethod
+from numpy import ndarray
+from pandas import DataFrame
 
 class LoggerBase(ABC):
 
@@ -6,7 +10,10 @@ class LoggerBase(ABC):
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, metric_collector=None): 
+    def __init__(
+        self, 
+        metric_collector: Optional[Type[MetricCollectorBase]] = None
+    ) -> None: 
         """
         Initialize logger
 
@@ -18,7 +25,10 @@ class LoggerBase(ABC):
         ...
 
     @abstractmethod
-    def nl(self, fields):
+    def nl(
+        self, 
+        fields: List[str]
+    ) -> None:
         """
         Creates/begins a new log
 
@@ -31,7 +41,12 @@ class LoggerBase(ABC):
         ...
 
     @abstractmethod
-    def append(self, data, image, adversarial_image): 
+    def append(
+        self, 
+        data: Mapping[str, Any], 
+        image: ndarray, 
+        adversarial_image: ndarray
+    ) -> None: 
         """
         Run metrics and log new item
 
@@ -48,7 +63,7 @@ class LoggerBase(ABC):
         ...
 
     @abstractmethod
-    def get(self): 
+    def get(self) -> DataFrame: 
         """
         Get current log
 
@@ -60,7 +75,7 @@ class LoggerBase(ABC):
         ...
 
     @abstractmethod
-    def get_all(self):
+    def get_all(self) -> List[DataFrame]:
         """
         Get all logs
 
@@ -72,14 +87,17 @@ class LoggerBase(ABC):
         ...
 
     @abstractmethod
-    def save(self):
+    def save(self) -> None:
         """
         Saves the experiment logs
         """
         ...
 
     @abstractmethod
-    def load(self, id):
+    def load(
+        self, 
+        id: Any
+    ) -> None:
         """
         Loads saved experiment logs
 
@@ -91,7 +109,7 @@ class LoggerBase(ABC):
         ...
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         """
         End of session clean up
         """

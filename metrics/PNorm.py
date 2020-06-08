@@ -1,10 +1,16 @@
+from typing import Mapping, Union, Tuple
 from gicaf.interface.MetricBase import MetricBase
 from numpy.linalg import norm
-from numpy import ravel, inf
+from numpy import ravel, inf, ndarray
 
 class AbsValueNorm(MetricBase):
 
-    def __call__(self, image, adversarial_image, model_metadata): 
+    def __call__(
+        self, 
+        image: ndarray, 
+        adversarial_image: ndarray, 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> float: 
         img = image
         adv = adversarial_image
         for _ in range(model_metadata['channels'] - 1):
@@ -14,10 +20,20 @@ class AbsValueNorm(MetricBase):
 
 class EuclideanNorm(MetricBase):
 
-    def __call__(self, image, adversarial_image, model_metadata): 
+    def __call__(
+        self, 
+        image: ndarray, 
+        adversarial_image: ndarray, 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> float: 
         return norm(adversarial_image - image, 2)
 
 class InfNorm(MetricBase):
 
-    def __call__(self, image, adversarial_image, model_metadata): 
+    def __call__(
+        self, 
+        image: ndarray, 
+        adversarial_image: ndarray, 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> float: 
         return norm(adversarial_image - image, inf)

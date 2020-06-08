@@ -1,14 +1,22 @@
+from typing import Optional, Type
 from gicaf.attacks.SparseSimBA import SparseSimBA
-from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty
+from gicaf.interface.ModelBase import ModelBase
+from gicaf.interface.LoggerBase import LoggerBase
+from numpy import clip, argwhere, zeros, array, log, full, gradient, flip, dot, shape, linspace, empty, ndarray
 from numpy.linalg import norm
 from numpy.random import randint
+from sys import setrecursionlimit
 from scipy.special import softmax
 import time
 
 class HNSSimBA(SparseSimBA):
 
-    def __call__(self, image, model, logger):
+    def __call__(self, 
+        image: ndarray, 
+        model: Type[ModelBase], 
+        logger: Type[LoggerBase], 
+        query_limit: int = 5000
+    ) -> Optional[ndarray]: 
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']

@@ -14,6 +14,6 @@ requirements = [
     "google-colab",
 ]
 
-def install():
+def install() -> None:
     for package in requirements:
         subprocess.check_call([executable, "-m", "pip", "install", package])

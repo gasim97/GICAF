@@ -1,8 +1,8 @@
 from typing import Optional, Dict, Any, Type
 from gicaf.interface.ModelBase import ModelBase
 from gicaf.interface.LoggerBase import LoggerBase
-import numpy as np
 from abc import ABC, abstractmethod
+from numpy import ndarray
 
 class AttackBase(ABC):
 
@@ -10,7 +10,10 @@ class AttackBase(ABC):
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, attack_parameters: Optional[Dict[str, Any]] = None) -> None: 
+    def __init__(
+        self, 
+        attack_parameters: Optional[Dict[str, Any]] = None
+    ) -> None: 
         """
         Initialize attack
 
@@ -24,11 +27,11 @@ class AttackBase(ABC):
 
     @abstractmethod
     def __call__(self, 
-        image: np.ndarray, 
+        image: ndarray, 
         model: Type[ModelBase], 
         logger: Type[LoggerBase], 
         query_limit: int = 5000
-    ) -> Optional[np.ndarray]: 
+    ) -> Optional[ndarray]: 
         """
         Runs the attack
 

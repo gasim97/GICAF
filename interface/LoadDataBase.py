@@ -1,5 +1,6 @@
+from typing import Callable, List, Tuple, Optional, Type, Mapping, Union
 from abc import ABC, abstractmethod
-from numpy import array, arange
+from numpy import array, arange, ndarray
 
 class LoadDataBase(ABC):
 
@@ -7,7 +8,10 @@ class LoadDataBase(ABC):
     def version(cls): return "1.0"
 
     @classmethod
-    def get_sorted_indicies_list(cls, index_ranges):
+    def get_sorted_indicies_list(
+        cls, 
+        index_ranges: List[Tuple[int, int]]
+    ) -> List[int]:
         """
         Get a list of indicies unpacked from the index ranges
 
@@ -29,7 +33,11 @@ class LoadDataBase(ABC):
         return indicies
 
     @abstractmethod
-    def __init__(self, ground_truth_file_path="", img_folder_path=""): 
+    def __init__(
+        self, 
+        ground_truth_file_path: Optional[str] = None, 
+        img_folder_path: Optional[str] = None
+    ) -> None: 
         """
         Initialize data loader and data paths
 
@@ -51,7 +59,11 @@ class LoadDataBase(ABC):
         ...
 
     @abstractmethod
-    def get_data(self, index_ranges, height, width): 
+    def get_data(
+        self, 
+        index_ranges: List[Tuple[int, int]], 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> Callable[[None], Tuple[ndarray, int]]: 
         """
         Get images and ground truths
 
@@ -76,7 +88,11 @@ class LoadDataBase(ABC):
         ...
 
     @abstractmethod
-    def save(self, data_generator, name): 
+    def save(
+        self, 
+        data_generator: Callable[[None], Tuple[ndarray, int]], 
+        name: str
+    ) -> None: 
         """
         Save preprocessed input data
 
@@ -95,7 +111,11 @@ class LoadDataBase(ABC):
         ...
 
     @abstractmethod
-    def load(self, name, index_ranges=None): 
+    def load(
+        self, 
+        name: str, 
+        index_ranges: Optional[List[Tuple[int, int]]] = None
+    ) -> Callable[[None], Tuple[ndarray, int]]: 
         """
         Load saved preprocessed input data
 

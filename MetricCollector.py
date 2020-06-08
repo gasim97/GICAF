@@ -1,4 +1,7 @@
+from typing import Type, Optional, List, Union, Dict
 from gicaf.interface.MetricCollectorBase import MetricCollectorBase
+from gicaf.interface.ModelBase import ModelBase
+from numpy import ndarray
 import gicaf.metrics.PNorm as PNorm
 import gicaf.metrics.PSNR as PSNR
 import gicaf.metrics.SSIM as SSIM
@@ -18,7 +21,11 @@ class MetricCollector(MetricCollectorBase):
     @classmethod
     def supported_metrics(cls): return metric_list.keys()
 
-    def __init__(self, model, metric_names=None):
+    def __init__(
+        self, 
+        model: Type[ModelBase], 
+        metric_names: Optional[List[str]] = None
+    ) -> None: 
         self.metric_names = ['model queries']
         if metric_names == None:
             self.metrics = []
@@ -32,7 +39,11 @@ class MetricCollector(MetricCollectorBase):
           self.metric_names.append(name)
         self.model = model
 
-    def __call__(self, image, adversarial_image): 
+    def __call__(
+        self, 
+        image: ndarray, 
+        adversarial_image: ndarray
+    ) -> Dict[str, Union[float, int]]: 
         result = {
             'model queries': self.model.get_query_count()
         }
@@ -40,5 +51,5 @@ class MetricCollector(MetricCollectorBase):
             result[metric[0]] = metric[1](image, adversarial_image, self.model.metadata)
         return result
 
-    def get_metric_list(self):
+    def get_metric_list(self) -> List[str]:
         return self.metric_names

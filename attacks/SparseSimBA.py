@@ -4,22 +4,34 @@
 Sourced and adapted from: https://github.com/alvarorobledo/sparse-simba/blob/master/utils.py
 Obtained: 27/01/2020
 """
-
+from typing import Type, Optional
 from gicaf.interface.AttackBase import AttackBase
+from gicaf.interface.ModelBase import ModelBase
+from gicaf.interface.LoggerBase import LoggerBase
+from numpy import clip, argwhere, zeros, ndarray
 from sys import setrecursionlimit
-from numpy import clip, argwhere, zeros
 from numpy.linalg import norm
 from numpy.random import randint
 import time
 
 class SparseSimBA(AttackBase):
 
-    def __init__(self, size=1, epsilon=64, query_limit=5000): 
+    def __init__(
+        self, 
+        size: int = 1, 
+        epsilon: int = 64, 
+        query_limit: int = 5000
+    ) -> None: 
         self.size = size
         self.epsilon = epsilon
         self.query_limit = query_limit
 
-    def __call__(self, image, model, logger):
+    def __call__(self, 
+        image: ndarray, 
+        model: Type[ModelBase], 
+        logger: Type[LoggerBase], 
+        query_limit: int = 5000
+    ) -> Optional[ndarray]: 
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']

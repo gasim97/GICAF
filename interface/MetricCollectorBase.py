@@ -1,3 +1,5 @@
+from typing import List, Optional, Type
+from gicaf.interface.ModelBase import ModelBase
 from abc import ABC, abstractmethod
 
 class MetricCollectorBase(ABC):
@@ -6,7 +8,11 @@ class MetricCollectorBase(ABC):
     def version(cls): return "1.0"
 
     @abstractmethod
-    def __init__(self, model, metric_names=None): 
+    def __init__(
+        self, 
+        model: Type[ModelBase], 
+        metric_names: Optional[List[str]] = None
+    ) -> None: 
         """
         Initialize visual quality assessment metrics collector
 

@@ -222,7 +222,10 @@ class _QuantVGG(nn.Module):
 
 class VGG19(PyTorchModel):
 
-    def __init__(self, bit_width=8):
+    def __init__(
+        self, 
+        bit_width: int = 8
+    ) -> None:
         self.bit_width = bit_width
         self.metadata = {'height': 224, 
                             'width': 224, 

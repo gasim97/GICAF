@@ -1,5 +1,6 @@
+from typing import List, Union, Any, Mapping, Union, Tuple
 from abc import ABC, abstractmethod
-from numpy import array, arange, flip, expand_dims, float32
+from numpy import array, arange, flip, expand_dims, float32, ndarray
 from scipy.special import softmax
 from copy import deepcopy
 
@@ -9,7 +10,10 @@ class ModelBase(ABC):
     def version(cls): return "1.0"
 
     @classmethod
-    def zip_indicies_to_preds(cls, preds):
+    def zip_indicies_to_preds(
+        cls, 
+        preds: Union[List, ndarray]
+    ) -> ndarray:
         """
         Zips the predictions with their indicies for convenience
 
@@ -25,7 +29,11 @@ class ModelBase(ABC):
         return array(list(zip(arange(len(preds)), preds)))
 
     @abstractmethod
-    def __init__(self, model, metadata): 
+    def __init__(
+        self, 
+        model: Any, 
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> None: 
         """
         Initialize model
 
@@ -48,7 +56,7 @@ class ModelBase(ABC):
                         True if input is to be loaded in BGR format, and False if RGB
                     'classes': int
                         Number of output classes
-                    'apply_softmax' : boolean
+                    'apply_softmax' : bool
                         Whether or not to apply softmax to the model's output
                     'weight_bits': int
                         Model weights bit width
@@ -63,7 +71,10 @@ class ModelBase(ABC):
         ...
 
     @abstractmethod
-    def get_preds(self, image):
+    def get_preds(
+        self, 
+        image: ndarray
+    ) -> ndarray:
         """
         Run inference on the model and apply softmax to the output if 
         'apply_sfotmax' field in 'self.metadata' is True
@@ -83,7 +94,10 @@ class ModelBase(ABC):
         ...
 
     @abstractmethod
-    def get_preds_batch(self, images): 
+    def get_preds_batch(
+        self, 
+        images: ndarray
+    ) -> ndarray: 
         """
         Run inference on batch and apply softmax to the output if 
         'apply_sfotmax' field in 'self.metadata' is True
@@ -102,7 +116,10 @@ class ModelBase(ABC):
         """
         ...
 
-    def get_top_1(self, image): 
+    def get_top_1(
+        self, 
+        image: ndarray
+    ) -> ndarray: 
         """
         Run inference and return top 1
 
@@ -121,7 +138,10 @@ class ModelBase(ABC):
         return preds[preds[:, 1].argsort()][-1] # sort predictions by probability, then 
         # extract the last entry (highest probability with label)
 
-    def get_top_1_batch(self, images): 
+    def get_top_1_batch(
+        self, 
+        images: ndarray
+    ) -> ndarray: 
         """
         Run inference on batch and return top 1
 
@@ -138,7 +158,10 @@ class ModelBase(ABC):
         preds = self.get_preds_batch(images)
         return array(list(map(lambda x: x[x[:, 1].argsort()][-1], preds)))
 
-    def get_top_5(self, image): 
+    def get_top_5(
+        self, 
+        image: ndarray
+    ) -> ndarray: 
         """
         Run inference and return top 5 ORDERED HIGHEST TO LOWEST
 
@@ -157,7 +180,10 @@ class ModelBase(ABC):
         # then extract the last 5 entries (highest probabilities with labels) and flip to sort 
         # by descending probability
 
-    def get_top_5_batch(self, images): 
+    def get_top_5_batch(
+        self, 
+        images: ndarray
+    ) -> ndarray: 
         """
         Run inference on batch and return top 5 ORDERED HIGHEST TO LOWEST
 
@@ -174,7 +200,10 @@ class ModelBase(ABC):
         preds = self.get_preds_batch(images)
         return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
 
-    def increment_query_count(self, num_queries):
+    def increment_query_count(
+        self, 
+        num_queries: int
+    ) -> None:
         """
         Increases the model's internal query count
 
@@ -185,16 +214,16 @@ class ModelBase(ABC):
         """
         self.query_count += num_queries
 
-    def reset_query_count(self):
+    def reset_query_count(self) -> None:
         """
         Resets the model's internal query count to zero
         """
         self.query_count = 0
 
-    def get_query_count(self):
+    def get_query_count(self) -> int:
         return self.query_count
 
-    def close(self):
+    def close(self) -> None:
         """
         End of session clean up
         """
@@ -202,17 +231,27 @@ class ModelBase(ABC):
 
 class KerasModel(ModelBase):
 
-    def __init__(self, kmodel, metadata): 
+    def __init__(
+        self, 
+        kmodel: Any, 
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> None: 
         self.metadata = metadata
         self.query_count = 0
         self.model = kmodel
 
-    def get_preds(self, image):
+    def get_preds(
+        self, 
+        image: ndarray
+    ) -> ndarray:
         preds = self.model.predict(image)
         self.increment_query_count(1)
         return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
-    def get_preds_batch(self, images): 
+    def get_preds_batch(
+        self, 
+        images: ndarray
+    ) -> ndarray: 
         preds = self.model.predict(images)
         self.increment_query_count(len(images))
         return array(list(map(
@@ -221,7 +260,11 @@ class KerasModel(ModelBase):
 
 class TfLiteModel(ModelBase):
 
-    def __init__(self, interpreter, metadata): 
+    def __init__(
+        self, 
+        interpreter: Any, 
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> None: 
         self.metadata = metadata
         self.query_count = 0
         self.interpreter = interpreter
@@ -229,19 +272,28 @@ class TfLiteModel(ModelBase):
         self.input_index = self.interpreter.get_input_details()[0]["index"]
         self.output_index = self.interpreter.get_output_details()[0]["index"]
 
-    def _evaluate(self, image):
+    def _evaluate(
+        self, 
+        image: ndarray
+    ) -> List:
         img = expand_dims(image, axis=0).astype(float32)
         self.interpreter.set_tensor(self.input_index, img)
         self.interpreter.invoke()
         output = self.interpreter.tensor(self.output_index)
         return deepcopy(output()[0])
 
-    def get_preds(self, image):
+    def get_preds(
+        self, 
+        image: ndarray
+    ) -> ndarray:
         preds = self._evaluate(image)
         self.increment_query_count(1)
         return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
-    def get_preds_batch(self, images): 
+    def get_preds_batch(
+        self, 
+        images: ndarray
+    ) -> ndarray: 
         self.increment_query_count(len(images))
         return array(list(map(
             lambda img: ModelBase.zip_indicies_to_preds(self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))), 
@@ -249,18 +301,28 @@ class TfLiteModel(ModelBase):
 
 class PyTorchModel(ModelBase):
 
-    def __init__(self, model, metadata): 
+    def __init__(
+        self, 
+        model: Any, 
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> None: 
         self.metadata = metadata
         self.query_count = 0
         self.model = model
         self.model.eval()
 
-    def get_preds(self, image):
+    def get_preds(
+        self, 
+        image: ndarray
+    ) -> ndarray:
         preds = self.model([image]).detach().numpy()[0]
         self.increment_query_count(1)
         return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
 
-    def get_preds_batch(self, images): 
+    def get_preds_batch(
+        self, 
+        images: ndarray
+    ) -> ndarray: 
         preds = self.model(images).detach().numpy()
         self.increment_query_count(len(images))
         return array(list(map(
