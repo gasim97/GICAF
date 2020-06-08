@@ -1,6 +1,7 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Dict, Any, Union
 from gicaf.interface.ModelBase import ModelBase
 from abc import ABC, abstractmethod
+from numpy import ndarray
 
 class MetricCollectorBase(ABC):
 
@@ -34,7 +35,11 @@ class MetricCollectorBase(ABC):
         ...
 
     @abstractmethod
-    def __call__(self, image, adversarial_image): 
+    def __call__(
+        self, 
+        image: ndarray, 
+        adversarial_image: ndarray
+    ) -> Dict[str, Union[float, int]]: 
         """
         Collect metrics on samples
 
@@ -58,7 +63,7 @@ class MetricCollectorBase(ABC):
         ...
 
     @abstractmethod
-    def get_metric_list(self):
+    def get_metric_list(self) -> List[str]:
         """
         Get the list of metrics to be collected
 

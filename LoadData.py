@@ -49,7 +49,7 @@ class LoadData(LoadDataBase):
         info("Test set successfully read.")
         return data
 
-    def _get_data(self):
+    def _get_data(self) -> Tuple[ndarray, int]:
         for i, image in enumerate(self.images_metadata):
             x = asarray(load_img(self.img_folder_path + image[0], target_size=(self.model_metadata['height'], self.model_metadata['width']), color_mode='rgb'))
             if (self.model_metadata['bgr']):
@@ -101,7 +101,7 @@ class LoadData(LoadDataBase):
         with open(str(self._save_file(name)), "wb") as fn: 
             dump(data, fn)
 
-    def _load(self):
+    def _load(self) -> Tuple[ndarray, int]:
         for x, y in self.loaded_data:
             yield x, y
 

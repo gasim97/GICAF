@@ -5,7 +5,7 @@ from gicaf.interface.AttackBase import AttackBase
 from gicaf.interface.LoggerBase import LoggerBase
 from gicaf.Logger import Logger
 from gicaf.MetricCollector import MetricCollector
-import numpy as np
+from numpy import ndarray
 from copy import deepcopy
 from logging import info, warning
 
@@ -13,7 +13,7 @@ class AttackEngine(AttackEngineBase):
 
     def __init__(
         self, 
-        data_generator: Callable[[None], Tuple[np.ndarray, int]], 
+        data_generator: Callable[[None], Tuple[ndarray, int]], 
         model: Type[ModelBase], 
         attacks: List[Type[AttackBase]],
         save: bool = True

@@ -1,38 +1,46 @@
+from typing import Optional, Union, List, Any, Tuple
 import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow.lite as lite
-from numpy import array
+from tensorflow.python.keras.engine.sequential import Sequential
+from tensorflow.lite.python.interpreter import Interpreter
+from numpy import array, ndarray
 from logging import info
-from pathlib import Path
+from pathlib import Path, PosixPath
 from os import path, walk, remove
 from zipfile import ZipFile, ZIP_DEFLATED
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from pydrive.files import GoogleDriveFile
 from google.colab import auth
 from oauth2client.client import GoogleCredentials
 
 # TensorFlow Lite and hub helper functions
 
-def create_dummy_sample(dims=[None, 224, 224, 3]):
+def create_dummy_sample(dims: List[Union[Optional[int]]] = [None, 224, 224, 3]) -> ndarray:
     return array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: array(list(map(lambda z: 0.0, range(dims[3])))), range(dims[2])))), range(dims[1])))), range(dims[0] if dims[0] != None else 1))))
 
-def _tfhub_model_dir(model_name, create_dir=True):
+def _tfhub_model_dir(model_name: str, create_dir: bool = True) -> PosixPath:
     tfhub_models_dir = Path(path.dirname(__file__) + "/tmp/tfhub_models/" + model_name + "/")
     if (create_dir):
         tfhub_models_dir.mkdir(exist_ok=True, parents=True)
     return tfhub_models_dir
 
-def _tflite_model_dir(model_name, create_dir=True):
+def _tflite_model_dir(model_name: str, create_dir: bool = True) -> PosixPath:
     tflite_models_dir = Path(path.dirname(__file__) + "/tmp/tflite_models/" + model_name + "/")
     if (create_dir):
         tflite_models_dir.mkdir(exist_ok=True, parents=True)
     return tflite_models_dir
 
-def _tflite_model_file(model_name, bit_width=8):
+def _tflite_model_file(model_name: str, bit_width: int = 8) -> PosixPath:
     tflite_models_dir = _tflite_model_dir(model_name)
     return tflite_models_dir/("model_" + str(bit_width) + "bit.tflite")
 
-def saved_model_to_tflite(saved_model_path, model_name, bit_width=8):
+def saved_model_to_tflite(
+    saved_model_path: str, 
+    model_name: str, 
+    bit_width: int = 8
+) -> PosixPath:
     info("Converting saved model to tfLite model")
     converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
     if (bit_width != 32):
@@ -47,17 +55,22 @@ def saved_model_to_tflite(saved_model_path, model_name, bit_width=8):
     tflite_model_file.write_bytes(tflite_model)
     return tflite_model_file
 
-def get_tfhub_model(link):
+def get_tfhub_model(link: str) -> Sequential:
     info("Getting tfHub model")
     return tf.keras.Sequential([hub.KerasLayer(link)])
 
-def save_tfhub_model(model, model_name):
+def save_tfhub_model(model, model_name: str) -> PosixPath:
     tfhub_models_dir = _tfhub_model_dir(model_name)
     info("Saving tfHub model to " + str(tfhub_models_dir))
     model.save(tfhub_models_dir, include_optimizer=False)
     return tfhub_models_dir
 
-def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], bit_width=8):
+def tfhub_to_tflite_converter(
+    link: str, 
+    model_name: str, 
+    input_dims: List[Union[Optional[int]]] = [None, 224, 224, 3], 
+    bit_width: int = 8
+) -> Tuple[Interpreter, int, int]:
     if (bit_width != 32):
         weight_bits = 8
     else:
@@ -83,10 +96,10 @@ def tfhub_to_tflite_converter(link, model_name, input_dims=[None, 224, 224, 3], 
 
 # Google Drive helper functions
 
-def _remove_file(file_name='tmp.zip'):
+def _remove_file(file_name: str = 'tmp.zip') -> None:
     remove(Path(path.dirname(__file__) + "/" + file_name))
 
-def _zip_dir(dir_name="tmp"):
+def _zip_dir(dir_name: str = "tmp") -> None:
     with ZipFile('gicaf/' + dir_name + '.zip', 'w', ZIP_DEFLATED) as zip_file:
         for folder_name, _, file_names in walk('gicaf/' + dir_name):
             for file_name in file_names:
@@ -94,18 +107,18 @@ def _zip_dir(dir_name="tmp"):
                 info("Compressing " + str(file_path))
                 zip_file.write(file_path)
 
-def _unzip_file(file_name='tmp'):   
+def _unzip_file(file_name: str = 'tmp') -> None:   
     with ZipFile('gicaf/' + file_name + '.zip', 'r') as zip_file:
         zip_file.extractall()
 
-def _get_gdrive_drive():
+def _get_gdrive_drive() -> GoogleDrive:
     auth.authenticate_user()
     gauth = GoogleAuth()
     gauth.credentials = GoogleCredentials.get_application_default()
     drive = GoogleDrive(gauth)
     return drive
 
-def _get_gdrive_file_metadata(file_name):
+def _get_gdrive_file_metadata(file_name: str) -> GoogleDriveFile:
     drive = _get_gdrive_drive()
     file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
     for file_ in file_list:
@@ -113,7 +126,7 @@ def _get_gdrive_file_metadata(file_name):
             return file_
     raise NameError("Failed to find '" + file_name + "' on Google Drive, enure that the tmp folder has been saved before and the correct file name is being used")
 
-def _save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp'):
+def _save_tmp_to_new_gdrive(gdrive_file_name: str = 'gicaf_tmp') -> None:
     gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     _zip_dir()
@@ -123,7 +136,7 @@ def _save_tmp_to_new_gdrive(gdrive_file_name='gicaf_tmp'):
     _remove_file()
     info("Saved compressed GICAF tmp folder to Google Drive as '" + gdrive_file_name + "'")
 
-def save_tmp_to_gdrive(gdrive_file_name='gicaf_tmp'):  
+def save_tmp_to_gdrive(gdrive_file_name: str = 'gicaf_tmp') -> None:  
     upload = _get_gdrive_file_metadata(gdrive_file_name + ".zip")
     if (upload == None):
         _save_tmp_to_new_gdrive(gdrive_file_name)
@@ -134,7 +147,7 @@ def save_tmp_to_gdrive(gdrive_file_name='gicaf_tmp'):
     _remove_file()
     info("Updated compressed GICAF tmp folder '" + gdrive_file_name + ".zip' on Google Drive")
 
-def load_tmp_from_gdrive(gdrive_file_name='gicaf_tmp'):
+def load_tmp_from_gdrive(gdrive_file_name: str = 'gicaf_tmp') -> None:
     gdrive_file_name = gdrive_file_name + ".zip"
     drive = _get_gdrive_drive()
     download = drive.CreateFile({'id': _get_gdrive_file_metadata(gdrive_file_name)['id']})
