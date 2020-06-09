@@ -72,9 +72,7 @@ class AttackEngine(AttackEngineBase):
         return self.loggers
 
     def close(self) -> None:
-        if self.save:
-            for attack in self.attacks:
-                attack.close() 
+        if self.save and not self.closed:
             for logger in self.loggers:
                 logger.close()
         self.closed = True
