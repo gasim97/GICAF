@@ -47,7 +47,7 @@ class AttackEngine(AttackEngineBase):
         use_memory: bool = False
     ) -> Tuple[List[Type[LoggerBase]], List[float]]: 
         if self.closed:
-            warning("Cannot run attack engine after it has been closed")
+            info("Cannot run attack engine after it has been closed")
             return self.loggers, self.success_rates
         metric_collector = MetricCollector(self.model, metric_names)
         for attack in self.attacks:
