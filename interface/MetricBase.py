@@ -5,7 +5,7 @@ from numpy import ndarray
 class MetricBase(ABC):
 
     @classmethod
-    def version(cls): return "1.0"
+    def version(cls) -> str: return "1.0"
 
     def __init__(self) -> None:
         """

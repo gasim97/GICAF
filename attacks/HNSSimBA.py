@@ -14,22 +14,30 @@ class HNSSimBA(SparseSimBA):
     def __call__(self, 
         image: ndarray, 
         model: Type[ModelBase], 
-        logger: Type[LoggerBase], 
+        logger: Type[LoggerBase],
+        ground_truth: Optional[int] = None,
+        target: Optional[int] = None, 
         query_limit: int = 5000
     ) -> Optional[ndarray]: 
+        if target:
+            raise NotImplementedError("Targeted HNSSimBA has not been implemented yet") 
+        if ground_truth == None:
+            raise ValueError('HNSSimBA is not intended for generating false positives, please provide a ground truth')
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']
         self.channels = self.model.metadata['channels']
         self.bounds = self.model.metadata['bounds']
         self.logger = logger
+        self.query_limit = query_limit
+        loss_label = ground_truth
 
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
         
         top_preds = self.model.get_top_5(image)
 
         ####
-        loss_label, p = top_preds[0]
+        top_1_label, p = top_preds[0]
 
         self.calcHSApprox(image, loss_label)
         top_preds = self.get_top_5(image)
@@ -42,7 +50,7 @@ class HNSSimBA(SparseSimBA):
                         'is_adv', 'image', 'top_preds', 'success'])
         self.total_calls = 0
         delta = 0
-        is_adv = 0
+        is_adv = self.is_adversarial(top_1_label, loss_label)
         iteration = 0
         done = []
         
@@ -59,7 +67,7 @@ class HNSSimBA(SparseSimBA):
             "success": False,
         }, image, adv)
 
-        while ((not is_adv) & (self.total_calls <= self.query_limit)): #buffer of 5 calls
+        while ((not is_adv) & (self.model.get_query_count() <= self.query_limit)): #buffer of 5 calls
             iteration += 1    
 
             q, done = self.new_q_direction(done)

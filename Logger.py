@@ -63,7 +63,10 @@ class Logger(LoggerBase):
         save_dir = self._save_dir()
         save_dir_str = str(save_dir)
         files = [str(file_) for file_ in save_dir.iterdir()]
-        experiments = list(map(lambda exp: int(exp.split('-')[1].split('.')[0]), filter(lambda f: f.split('-')[0] == (save_dir_str + "/experiment"), files)))
+        experiments = list(map(
+            lambda exp: int(exp.split('-')[1].split('.')[0]), 
+            filter(lambda f: f.split('-')[0] == (save_dir_str + "/experiment"), files)
+        ))
         experiment_id = 1
         if (len(experiments) > 0):
             experiment_id += max(experiments)

@@ -5,7 +5,7 @@ from gicaf.interface.LoggerBase import LoggerBase
 from numpy import clip, argwhere, zeros, array, ndarray
 from sys import setrecursionlimit
 from numpy.linalg import norm
-from numpy.random import randint
+from numpy.random import randint, uniform
 import time
 
 class AdaptiveSimBA(AttackBase):
@@ -14,30 +14,36 @@ class AdaptiveSimBA(AttackBase):
         self, 
         size: int = 1, 
         epsilon: int = 64, 
-        query_limit: int = 5000
     ) -> None: 
         self.size = size
         self.epsilon = epsilon
         self.initial_epsilon = epsilon
-        self.query_limit = query_limit
 
     def __call__(self, 
         image: ndarray, 
         model: Type[ModelBase], 
         logger: Type[LoggerBase], 
+        ground_truth: Optional[int] = None,
+        target: Optional[int] = None,
         query_limit: int = 5000
     ) -> Optional[ndarray]: 
+        if target:
+            raise NotImplementedError("Targeted Adaptive SimBA has not been implemented yet") 
+        if ground_truth == None:
+            raise ValueError('Adaptive SimBA is not intended for generating false positives, please provide a ground truth')
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']
         self.channels = self.model.metadata['channels']
         self.bounds = self.model.metadata['bounds']
         self.logger = logger
+        self.query_limit = query_limit
+        loss_label = ground_truth
 
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
 
         top_preds = self.model.get_top_5(image)
-        loss_label, p = top_preds[0]
+        top_1_label, p = top_preds[0]
 
         self.logger.nl(['iterations', 'epsilon','size', 
                         'is_adv', 'image', 'top_preds', 'success'])
@@ -49,7 +55,7 @@ class AdaptiveSimBA(AttackBase):
         self.num_directions = 1
         self.total_calls = 0
         delta = 0
-        is_adv = 0
+        is_adv = self.is_adversarial(top_1_label, loss_label)
         iteration = 0
         done = []
         
@@ -66,7 +72,7 @@ class AdaptiveSimBA(AttackBase):
             "success": False,
         }, image, adv)
 
-        while ((not is_adv) & (self.total_calls <= self.query_limit)): 
+        while ((not is_adv) & (self.model.get_query_count() <= self.query_limit)): 
             iteration += 1    
 
             q, done = self.new_q_direction(done)
@@ -86,14 +92,17 @@ class AdaptiveSimBA(AttackBase):
             if success:
                 count = 0
                 past_qs.append(q)
-                self.num_directions = 1
+                self.epsilon = self.initial_epsilon
             else:
-                if count == 10:
-                    self.num_directions = 2
-                if count % 50 == 0 and len(past_qs) > 0:
-                    last_q, past_qs = past_qs[-1], past_qs[:-1]
-                    delta = delta + self.epsilon * last_q
-                    self.ps = self.ps[:-1]
+                if uniform(0, 100, 1) < count:
+                    if self.epsilon == self.initial_epsilon:
+                        self.epsilon = 1.2*self.epsilon
+                        count = 0
+                    elif len(past_qs) > 0:
+                        last_q, past_qs = past_qs[-1], past_qs[:-1]
+                        delta = delta + self.epsilon * last_q
+                        self.ps = self.ps[:-1]
+                        count = 0
 
             if iteration % 100 == 0: # only save image and probs every 100 steps, to save memory space
                 image_save = adv
@@ -124,17 +133,17 @@ class AdaptiveSimBA(AttackBase):
                     "top_preds": top_preds,
                     "success": success,
                 }, image, adv) 
-                return adv, self.total_calls
+                return adv
                 
-        return adv, self.total_calls
+        return None
 
     def check_pos(self, x, delta, q, p, loss_label):
         success = False 
         pos_x = x + delta + self.epsilon * q
         pos_x = clip(pos_x, self.bounds[0], self.bounds[1])
         top_5_preds = self.model.get_top_5(pos_x)
-        if self.model.metadata['activation_bits'] <= 8:
-            top_5_preds = self.adjust_preds(top_5_preds)
+        if self.model.metadata['activation bits'] <= 8:
+            noisy_top_5_preds = self.adjust_preds(top_5_preds)
 
         idx = argwhere(loss_label==top_5_preds[:,0]) # positions of occurences of label in preds
         if len(idx) == 0:
@@ -143,7 +152,10 @@ class AdaptiveSimBA(AttackBase):
             success = True
             return delta, p, top_5_preds, success
         idx = idx[0][0]
-        p_test = top_5_preds[idx][1]
+        if self.model.metadata['activation bits'] <= 8:
+            p_test = noisy_top_5_preds[idx][1]
+        else:
+            p_test = top_5_preds[idx][1]
         if p_test < self.ps[-1] or idx != 0:
             delta = delta + self.epsilon*q # add new perturbation to total perturbation
             self.ps.append(p_test) # update new p
@@ -155,8 +167,8 @@ class AdaptiveSimBA(AttackBase):
         neg_x = x + delta - self.epsilon * q
         neg_x = clip(neg_x, self.bounds[0], self.bounds[1])
         top_5_preds = self.model.get_top_5(neg_x)
-        if self.model.metadata['activation_bits'] <= 8:
-            top_5_preds = self.adjust_preds(top_5_preds)
+        if self.model.metadata['activation bits'] <= 8:
+            noisy_top_5_preds = self.adjust_preds(top_5_preds)
 
         idx = argwhere(loss_label==top_5_preds[:,0]) # positions of occurences of label in preds
         if len(idx) == 0:
@@ -165,7 +177,10 @@ class AdaptiveSimBA(AttackBase):
             success = True
             return delta, p, top_5_preds, success
         idx = idx[0][0]
-        p_test = top_5_preds[idx][1]
+        if self.model.metadata['activation bits'] <= 8:
+            p_test = noisy_top_5_preds[idx][1]
+        else:
+            p_test = top_5_preds[idx][1]
         if p_test < self.ps[-1] or idx != 0:
             delta = delta - self.epsilon*q # add new perturbation to total perturbation
             self.ps.append(p_test) # update new p 
@@ -191,7 +206,7 @@ class AdaptiveSimBA(AttackBase):
         return q
 
     def adjust_preds(self, preds):
-        probs = list(map(lambda x: round(x[1], 5), preds))
+        probs = list(map(lambda x: x[1] + uniform(low=-0.01, high=0.01, size=1), preds))
         preds = list(map(lambda x: x[0], preds))
         return array(list(map(lambda x: array(x), zip(preds, probs))))
 

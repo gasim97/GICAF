@@ -13,13 +13,13 @@ metric_list = {
     "infinity norm": PNorm.InfNorm,
     "psnr": PSNR.PSNR,
     "ssim": SSIM.SSIM,
-    "wadiqam": WaDIQaM.WaDIQaM,
+    "wadiqam-fr": WaDIQaM.WaDIQaMFR,
 }
 
 class MetricCollector(MetricCollectorBase):
 
     @classmethod
-    def supported_metrics(cls): return metric_list.keys()
+    def supported_metrics(cls) -> List[str]: return metric_list.keys()
 
     def __init__(
         self, 

@@ -20,36 +20,42 @@ class SparseSimBA(AttackBase):
         self, 
         size: int = 1, 
         epsilon: int = 64, 
-        query_limit: int = 5000
     ) -> None: 
         self.size = size
         self.epsilon = epsilon
-        self.query_limit = query_limit
 
     def __call__(self, 
         image: ndarray, 
         model: Type[ModelBase], 
-        logger: Type[LoggerBase], 
+        logger: Type[LoggerBase],
+        ground_truth: Optional[int] = None, 
+        target: Optional[int] = None, 
         query_limit: int = 5000
-    ) -> Optional[ndarray]: 
+    ) -> Optional[ndarray]:
+        if target:
+            raise NotImplementedError("Targeted Sparse SimBA has not been implemented yet") 
+        if ground_truth == None:
+            raise ValueError('Sparse SimBA is not intended for generating false positives, please provide a ground truth')
         self.model = model
         self.height = self.model.metadata['height']
         self.width = self.model.metadata['width']
         self.channels = self.model.metadata['channels']
         self.bounds = self.model.metadata['bounds']
         self.logger = logger
+        self.query_limit = query_limit
+        loss_label = ground_truth
 
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
 
         top_preds = self.model.get_top_5(image)
 
         ####
-        loss_label, p = top_preds[0]
+        top_1_label, p = top_preds[0]
         self.logger.nl(['iterations', 'epsilon','size', 
                         'is_adv', 'image', 'top_preds'])
         total_calls = 0
         delta = 0
-        is_adv = 0
+        is_adv = self.is_adversarial(top_1_label, loss_label)
         iteration = 0
         done = []
         
@@ -65,7 +71,7 @@ class SparseSimBA(AttackBase):
             "top_preds": top_preds
         }, image, adv)
 
-        while ((not is_adv) & (total_calls <= self.query_limit)):
+        while ((not is_adv) & (self.model.get_query_count() <= self.query_limit)):
             iteration += 1    
 
             q, done = self.new_q_direction(done)

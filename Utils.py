@@ -40,11 +40,15 @@ def saved_model_to_tflite(
     saved_model_path: str, 
     model_name: str, 
     bit_width: int = 8
-) -> PosixPath:
+) -> Tuple[Interpreter, int, int]:
     info("Converting saved model to tfLite model")
     converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
     if (bit_width != 32):
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        weight_bits = 8
+    else:
+        weight_bits = bit_width
+    activation_bits = bit_width
     if (bit_width == 16):
         converter.target_spec.supported_types = [tf.float16]
     elif (bit_width != 8 and bit_width != 32):
@@ -53,7 +57,8 @@ def saved_model_to_tflite(
     tflite_model_file = _tflite_model_file(model_name, bit_width)
     info("Saving tfLite model to " + str(tflite_model_file))
     tflite_model_file.write_bytes(tflite_model)
-    return tflite_model_file
+    interpreter = lite.Interpreter(model_path=str(tflite_model_file))
+    return interpreter, weight_bits, activation_bits
 
 def get_tfhub_model(link: str) -> Sequential:
     info("Getting tfHub model")
@@ -71,15 +76,15 @@ def tfhub_to_tflite_converter(
     input_dims: List[Union[Optional[int]]] = [None, 224, 224, 3], 
     bit_width: int = 8
 ) -> Tuple[Interpreter, int, int]:
-    if (bit_width != 32):
-        weight_bits = 8
-    else:
-        weight_bits = bit_width
-    activation_bits = bit_width
     tflite_model_file = _tflite_model_file(model_name, bit_width)
     if (tflite_model_file.exists()):
         info("Using saved tflite model at " + str(tflite_model_file))
         interpreter = lite.Interpreter(model_path=str(tflite_model_file))
+        if (bit_width != 32):
+            weight_bits = 8
+        else:
+            weight_bits = bit_width
+        activation_bits = bit_width
         return interpreter, weight_bits, activation_bits
     tfhub_models_dir = _tfhub_model_dir(model_name, create_dir=False)
     if (tfhub_models_dir.is_dir()):
@@ -90,8 +95,7 @@ def tfhub_to_tflite_converter(
         model.predict(create_dummy_sample(input_dims))
         model.compile()
         tfhub_models_dir = save_tfhub_model(model, model_name)
-    tflite_model_file = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
-    interpreter = lite.Interpreter(model_path=str(tflite_model_file))
+    interpreter, weight_bits, activation_bits = saved_model_to_tflite(str(tfhub_models_dir), model_name, bit_width)
     return interpreter, weight_bits, activation_bits
 
 # Google Drive helper functions

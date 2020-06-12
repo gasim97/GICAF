@@ -7,7 +7,7 @@ from pandas import DataFrame
 class LoggerBase(ABC):
 
     @classmethod
-    def version(cls): return "1.0"
+    def version(cls) -> str: return "1.0"
 
     @abstractmethod
     def __init__(

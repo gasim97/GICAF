@@ -6,7 +6,21 @@ from numpy import ndarray
 class MetricCollectorBase(ABC):
 
     @classmethod
-    def version(cls): return "1.0"
+    def version(cls) -> str: return "1.0"
+
+    @classmethod
+    @abstractmethod
+    def supported_metrics(cls) -> List[str]:
+        """
+        Get a list of supported metrics
+
+        Returns
+        -------
+            metric_names : list with elements of type string
+                The names of the visual quality assessment metrics supported by 
+                the metrics collector
+        """
+        ...
 
     @abstractmethod
     def __init__(

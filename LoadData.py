@@ -30,7 +30,7 @@ class LoadData(LoadDataBase):
     def read_txt_file(
         self, 
         index_ranges: List[Tuple[int, int]]
-    ):
+    ) -> List[Tuple[str, int]]:
         info("Reading dataset text file (file path = '" + self.ground_truth_file_path + "')...")
         sorted_indicies = LoadDataBase.get_sorted_indicies_list(index_ranges)
         txt_file = open(self.ground_truth_file_path, "r")
@@ -45,17 +45,30 @@ class LoadData(LoadDataBase):
                 txt_file.readline() # skip data if current index is NOT the next index in the desired index range
             curr_index += 1 # increment current index
 
-        data = list(map(lambda x: [x[0], int(x[1].strip())], data)) # strip white spaces/new lines from loaded data
+        data = list(map(
+            lambda x: (x[0], None if x[1].strip() == 'None' or x[1].strip() == 'none' else int(x[1].strip())) # strip white spaces/new lines from loaded data
+            , data
+        ))
         info("Test set successfully read.")
         return data
 
     def _get_data(self) -> Tuple[ndarray, int]:
         for i, image in enumerate(self.images_metadata):
-            x = asarray(load_img(self.img_folder_path + image[0], target_size=(self.model_metadata['height'], self.model_metadata['width']), color_mode='rgb'))
+            x = asarray(load_img(
+                self.img_folder_path + image[0], 
+                target_size=(
+                    self.model_metadata['height'], 
+                    self.model_metadata['width']
+                ),
+                color_mode='rgb'
+            ))
             if (self.model_metadata['bgr']):
                 x = asarray(cvtColor(x, COLOR_RGB2BGR))
             if (self.model_metadata['bounds'] != (0, 255)):
-                x = self.preprocessing(x, self.model_metadata['bounds'])
+                x = self.preprocessing(
+                    x, 
+                    self.model_metadata['bounds']
+                )
             y = self.images_metadata[i][1]
             yield x, y
 
@@ -76,7 +89,10 @@ class LoadData(LoadDataBase):
     ) -> ndarray:
         info("Preprocessing image bounds.")
         divisor = 255/(bounds[1] - bounds[0])
-        return array(list(map(lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + bounds[0], j)), dtype=dtype), i))), image)))
+        return array(list(map(
+            lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + bounds[0], j)), dtype=dtype), i))), 
+            image
+        )))
 
     def _save_dir(self) -> PosixPath:
         save_dir = Path(dirname(__file__) + "/tmp/saved_input_data/")

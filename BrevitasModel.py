@@ -230,13 +230,13 @@ class VGG19(PyTorchModel):
         self.metadata = {'height': 224, 
                             'width': 224, 
                             'channels': 3, 
-                            'bounds': (0, (bit_width**2)-1), 
+                            'bounds': (0.0, (bit_width**2)-1), 
                             'bgr': False, 
                             'classes': 1000, 
-                            'apply_softmax': False,
+                            'apply softmax': False,
                             'percision': bit_width,
-                            'weight_bits': bit_width,
-                            'activation_bits': bit_width}
+                            'weight bits': bit_width,
+                            'activation bits': bit_width}
         self.vgg19 = _QuantVGG('VGG19', bit_width=bit_width)
         info("Initialized VGG19, run 'model.train(x, y)' to train")
 

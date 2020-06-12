@@ -1,14 +1,27 @@
 from typing import List, Union, Any, Mapping, Union, Tuple
 from abc import ABC, abstractmethod
+import gicaf.Utils as utils
 from tensorflow.lite.python.interpreter import Interpreter
 from numpy import array, arange, flip, expand_dims, float32, ndarray
 from scipy.special import softmax
 from copy import deepcopy
 
+metadata_fields = [
+    'height',
+    'width',
+    'channels',
+    'bounds',
+    'bgr',
+    'classes',
+    'apply softmax',
+    'weight bits',
+    'activation bits'
+]
+
 class ModelBase(ABC):
 
     @classmethod
-    def version(cls): return "1.0"
+    def version(cls) -> str: return "1.0"
 
     @classmethod
     def zip_indicies_to_preds(
@@ -29,11 +42,10 @@ class ModelBase(ABC):
         """
         return array(list(zip(arange(len(preds)), preds)))
 
-    @abstractmethod
     def __init__(
         self, 
         model: Any, 
-        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+        metadata: Mapping[str, Union[int, bool, Tuple[float, float]]]
     ) -> None: 
         """
         Initialize model
@@ -42,7 +54,7 @@ class ModelBase(ABC):
         ----------
             model : Any
                 A model of the type expected by the inheriting class
-            metadata: dict
+            metadata : dict
                 To be stored as an instance variable 'self.metadata' and contains the 
                 following fields
                     'height' : int
@@ -51,25 +63,25 @@ class ModelBase(ABC):
                         Input width
                     'channels' : int
                         Input number of channels
-                    'bounds' : 2-tuple with elements of type int
+                    'bounds' : 2-tuple with elements of type float
                         Contains (min, max) of input values
                     'bgr' : bool
-                        True if input is to be loaded in BGR format, and False if RGB
-                    'classes': int
+                        True if input is to be loaded in BGR format, and False if RGB or otherwise
+                    'classes' : int
                         Number of output classes
-                    'apply_softmax' : bool
+                    'apply softmax' : bool
                         Whether or not to apply softmax to the model's output
-                    'weight_bits': int
+                    'weight bits': int
                         Model weights bit width
-                    'activation_bits': int
+                    'activation bits': int
                         Model activations bit width
-        Note
-        ----
-            This method must create the following variables:
-                self.metadata = metadata
-                self.query_count = 0
         """
-        ...
+        for field in metadata_fields:
+            if field not in metadata:
+                raise ValueError("Model metadata dictionary is missing the '" + field + "' field")
+        self.model = model
+        self.metadata = metadata
+        self.query_count = 0
 
     @abstractmethod
     def get_preds(
@@ -105,7 +117,7 @@ class ModelBase(ABC):
 
         Parameters
         ----------
-            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+            images : numpy.ndarray with elements (images) of type numpy.ndarrays
                 Images
         Returns
         -------
@@ -148,7 +160,7 @@ class ModelBase(ABC):
 
         Parameters
         ----------
-            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+            images : numpy.ndarray with elements (images) of type numpy.ndarrays
                 Images
         Returns
         -------
@@ -168,7 +180,7 @@ class ModelBase(ABC):
 
         Parameters
         ----------
-            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+            images : numpy.ndarray with elements (images) of type numpy.ndarrays
                 Images
         Returns
         -------
@@ -190,7 +202,7 @@ class ModelBase(ABC):
 
         Parameters
         ----------
-            images : numpy.ndarray or list with elements (images) of type numpy.ndarrays
+            images : numpy.ndarray with elements (images) of type numpy.ndarrays
                 Images
         Returns
         -------
@@ -199,7 +211,62 @@ class ModelBase(ABC):
                 for each image zipped with the predictions
         """
         preds = self.get_preds_batch(images)
-        return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-5:], preds))), 1)
+        return flip(array(list(map(
+            lambda x: x[x[:, 1].argsort()][-5:], 
+            preds
+        ))), 1)
+
+    def get_top_n(
+        self, 
+        image: ndarray,
+        n: int
+    ) -> ndarray: 
+        """
+        Run inference and return top n ORDERED HIGHEST TO LOWEST
+
+        Parameters
+        ----------
+            images : numpy.ndarray with elements (images) of type numpy.ndarrays
+                Images
+            n : int
+                The number of top predictions to return
+        Returns
+        -------
+            [[label, probability]]  : numpy.ndarray -> shape = (n, 2)
+                The output indicies corresponding to the highest n predictions
+                zipped with the predictions
+        """
+        if n > self.metadata['classes']:
+            n = self.metadata['classes']
+        preds = self.get_preds(image)
+        return flip(preds[preds[:, 1].argsort()][-n:], 0) # sort predictions by probability, 
+        # then extract the last n entries (highest probabilities with labels) and flip to sort 
+        # by descending probability
+
+    def get_top_n_batch(
+        self, 
+        images: ndarray,
+        n: int
+    ) -> ndarray: 
+        """
+        Run inference on batch and return top n ORDERED HIGHEST TO LOWEST
+
+        Parameters
+        ----------
+            images : numpy.ndarray with elements (images) of type numpy.ndarrays
+                Images
+            n : int
+                The number of top predictions to return
+        Returns
+        -------
+            [[[label, probability]]] : numpy.ndarray -> shape = (batch size, n, 2)
+                The output indicies corresponding to the highest n predictions
+                for each image zipped with the predictions
+        """
+        if n > self.metadata['classes']:
+            n = self.metadata['classes']
+        preds = self.get_preds_batch(images)
+        return flip(array(list(map(lambda x: x[x[:, 1].argsort()][-n:], preds))), 1)
 
     def increment_query_count(
         self, 
@@ -232,22 +299,13 @@ class ModelBase(ABC):
 
 class KerasModel(ModelBase):
 
-    def __init__(
-        self, 
-        kmodel: Any, 
-        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
-    ) -> None: 
-        self.metadata = metadata
-        self.query_count = 0
-        self.model = kmodel
-
     def get_preds(
         self, 
         image: ndarray
     ) -> ndarray:
         preds = self.model.predict(image)
         self.increment_query_count(1)
-        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
+        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
     def get_preds_batch(
         self, 
@@ -257,7 +315,7 @@ class KerasModel(ModelBase):
         self.increment_query_count(len(images))
         return array(list(map(
             lambda x: ModelBase.zip_indicies_to_preds(x), 
-            preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
+            preds if not self.metadata['apply softmax'] else map(lambda x: softmax(x), preds))))
 
 class TfLiteModel(ModelBase):
 
@@ -266,21 +324,19 @@ class TfLiteModel(ModelBase):
         interpreter: Interpreter, 
         metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
     ) -> None: 
-        self.metadata = metadata
-        self.query_count = 0
-        self.interpreter = interpreter
-        self.interpreter.allocate_tensors()
-        self.input_index = self.interpreter.get_input_details()[0]["index"]
-        self.output_index = self.interpreter.get_output_details()[0]["index"]
+        interpreter.allocate_tensors()
+        self.input_index = interpreter.get_input_details()[0]["index"]
+        self.output_index = interpreter.get_output_details()[0]["index"]
+        super(TfLiteModel, self).__init__(model=interpreter, metadata=metadata)
 
     def _evaluate(
         self, 
         image: ndarray
     ) -> List:
         img = expand_dims(image, axis=0).astype(float32)
-        self.interpreter.set_tensor(self.input_index, img)
-        self.interpreter.invoke()
-        output = self.interpreter.tensor(self.output_index)
+        self.model.set_tensor(self.input_index, img)
+        self.model.invoke()
+        output = self.model.tensor(self.output_index)
         return deepcopy(output()[0])
 
     def get_preds(
@@ -289,7 +345,7 @@ class TfLiteModel(ModelBase):
     ) -> ndarray:
         preds = self._evaluate(image)
         self.increment_query_count(1)
-        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
+        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
     def get_preds_batch(
         self, 
@@ -297,8 +353,43 @@ class TfLiteModel(ModelBase):
     ) -> ndarray: 
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda img: ModelBase.zip_indicies_to_preds(self._evaluate(img) if not self.metadata['apply_softmax'] else softmax(self._evaluate(img))), 
+            lambda img: ModelBase.zip_indicies_to_preds(self._evaluate(img) if not self.metadata['apply softmax'] else softmax(self._evaluate(img))), 
             images)))
+
+    @classmethod
+    def from_saved_model(
+        cls, 
+        saved_model_path: str,
+        model_name: str,
+        bit_width: int,
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> TfLiteModel:
+        interpreter, weight_bits, activation_bits = utils.saved_model_to_tflite(
+            saved_model_path=saved_model_path, 
+            model_name=model_name, 
+            bit_width=bit_width
+        )
+        metadata['weight bits'] = weight_bits
+        metadata['activation bits'] = activation_bits
+        return TfLiteModel(interpreter, activation_bits)
+
+    @classmethod
+    def from_tensorflowhub(
+        cls, 
+        link: str,
+        model_name: str,
+        bit_width: int,
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> TfLiteModel:
+        interpreter, weight_bits, activation_bits = utils.tfhub_to_tflite_converter(
+            link=link, 
+            model_name=model_name, 
+            input_dims=[None, metadata['height'], metadata['width'], metadata['channels']],
+            bit_width=bit_width
+        )
+        metadata['weight bits'] = weight_bits
+        metadata['activation bits'] = activation_bits
+        return TfLiteModel(interpreter, activation_bits)
 
 class PyTorchModel(ModelBase):
 
@@ -307,10 +398,8 @@ class PyTorchModel(ModelBase):
         model: Any, 
         metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
     ) -> None: 
-        self.metadata = metadata
-        self.query_count = 0
-        self.model = model
-        self.model.eval()
+        model.eval()
+        super(PyTorchModel, self).__init__(model=model, metadata=metadata)
 
     def get_preds(
         self, 
@@ -318,7 +407,7 @@ class PyTorchModel(ModelBase):
     ) -> ndarray:
         preds = self.model([image]).detach().numpy()[0]
         self.increment_query_count(1)
-        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply_softmax'] else softmax(preds))
+        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
     def get_preds_batch(
         self, 
@@ -328,4 +417,4 @@ class PyTorchModel(ModelBase):
         self.increment_query_count(len(images))
         return array(list(map(
             lambda x: ModelBase.zip_indicies_to_preds(x), 
-            preds if not self.metadata['apply_softmax'] else map(lambda x: softmax(x), preds))))
+            preds if not self.metadata['apply softmax'] else map(lambda x: softmax(x), preds))))

@@ -1,11 +1,11 @@
 from typing import Callable, List, Tuple, Optional, Type, Mapping, Union
 from abc import ABC, abstractmethod
-from numpy import array, arange, ndarray
+from numpy import arange, ndarray
 
 class LoadDataBase(ABC):
 
     @classmethod
-    def version(cls): return "1.0"
+    def version(cls) -> str: return "1.0"
 
     @classmethod
     def get_sorted_indicies_list(
@@ -28,8 +28,12 @@ class LoadDataBase(ABC):
             For input index_ranges = [(1, 3), (9, 11), (5, 7), (6, 7)]
             returns indicies = [1, 2, 3, 5, 6, 7, 9, 10, 11]
         """
-        indicies = [val for sublist in array(list(map(lambda x: arange(x[0], x[1] + 1), index_ranges))) for val in sublist] # unpack the index ranges to a list of indicies
-        indicies = sorted(list(dict.fromkeys(indicies))) # remove duplicate indicies, incase inputed index ranges overlap, and sort
+        indicies = [val for sublist in list(map(
+            lambda x: arange(x[0], x[1] + 1), 
+            index_ranges
+        )) for val in sublist] # unpack the index ranges to a list of indicies
+        indicies = sorted(list(dict.fromkeys(indicies))) # remove duplicate indicies, 
+        # incase inputed index ranges overlap, and sort
         return indicies
 
     @abstractmethod
@@ -52,6 +56,8 @@ class LoadDataBase(ABC):
                     image_file_name ground_truth
                     image_file_name ground_truth
                     ...
+                Note, in the case of samples for an attack method generating false positives
+                the ground-truths can be None
             img_folder_path: sting
                 The absolute path to the folder/directory containing the images to be
                 loaded with file names as in the ground truths file
@@ -136,12 +142,5 @@ class LoadDataBase(ABC):
                         Loaded images in BGR format
                     ground truth : int
                         The ground truth of the loaded image
-        """
-        ...
-
-    @abstractmethod
-    def close(self): 
-        """
-        End of session clean up
         """
         ...

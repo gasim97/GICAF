@@ -4,7 +4,7 @@ from gicaf.metrics.resources.wadiqam import Utils
 from numpy import ndarray
 from cv2 import cvtColor, COLOR_BGR2RGB
 
-class WaDIQaM(MetricBase):
+class WaDIQaMFR(MetricBase):
 
     def __init__(self) -> None:
         self.model = Utils.get_FRnet()

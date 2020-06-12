@@ -7,21 +7,21 @@ from numpy import ndarray
 class AttackBase(ABC):
 
     @classmethod
-    def version(cls): return "1.0"
+    def version(cls) -> str: return "1.0"
 
     @abstractmethod
     def __init__(
         self, 
-        attack_parameters: Optional[Dict[str, Any]] = None
+        **kwargs
     ) -> None: 
         """
         Initialize attack
 
         Parameters
         ----------
-            attack_parameters : optional dict
-                A dictionary containing attack parameters. Default is None. As
-                such Attack modules must have default parameter values
+            Named parameters are to be defined by sub-classes, where needed. Furthermore,
+            sub-classes should have and use default paramters where the user does not specify
+            a parameter
         """
         ...
 
@@ -30,6 +30,8 @@ class AttackBase(ABC):
         image: ndarray, 
         model: Type[ModelBase], 
         logger: Type[LoggerBase], 
+        ground_truth: Optional[int] = None,
+        target: Optional[int] = None,
         query_limit: int = 5000
     ) -> Optional[ndarray]: 
         """
@@ -43,6 +45,12 @@ class AttackBase(ABC):
                 The model to attack wrapped in an instance of ModelBase
             logger: LoggerBase
                 A logger to log experimental data
+            ground_truth : optional int
+                The original class, if None then a false positive attack is carried
+                out
+            target : optional int
+                The targeted class, if None then an untargeted attack is carried
+                out
             query_limit : int
                 The maximum number of model queries allowable to achieve a
                 successful attack. The default is 5000
@@ -50,5 +58,13 @@ class AttackBase(ABC):
         -------
             adv : numpy.ndarray or None
                 Adversarial image if successful, or None otherwise
+        Raises
+        ------
+            NotImplementedError
+                When the attack setting infered from the optional arguments is
+                supported by the algorithm, but has not yet been implemented
+            ValueError
+                When the attack setting infered from the optional arguments is not
+                supported by the algorithm
         """
         ...
