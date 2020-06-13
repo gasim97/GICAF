@@ -132,7 +132,3 @@ class LoadData(LoadDataBase):
             sorted_indicies = LoadDataBase.get_sorted_indicies_list(index_ranges)
             self.loaded_data = list(map(lambda x: x[1], filter(lambda x: x[0] in sorted_indicies, enumerate(self.loaded_data))))
         return self._load
-
-    # end of session clean up
-    def close(self) -> None: 
-        pass

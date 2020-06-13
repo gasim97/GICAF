@@ -1,4 +1,4 @@
-from typing import List, Union, Any, Mapping, Union, Tuple
+from typing import List, Union, Any, Mapping, Union, Tuple, Type
 from abc import ABC, abstractmethod
 import gicaf.Utils as utils
 from tensorflow.lite.python.interpreter import Interpreter
@@ -363,7 +363,7 @@ class TfLiteModel(ModelBase):
         model_name: str,
         bit_width: int,
         metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
-    ) -> TfLiteModel:
+    ) -> Type[ModelBase]:
         interpreter, weight_bits, activation_bits = utils.saved_model_to_tflite(
             saved_model_path=saved_model_path, 
             model_name=model_name, 
@@ -371,7 +371,7 @@ class TfLiteModel(ModelBase):
         )
         metadata['weight bits'] = weight_bits
         metadata['activation bits'] = activation_bits
-        return TfLiteModel(interpreter, activation_bits)
+        return TfLiteModel(interpreter, metadata)
 
     @classmethod
     def from_tensorflowhub(
@@ -380,7 +380,7 @@ class TfLiteModel(ModelBase):
         model_name: str,
         bit_width: int,
         metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
-    ) -> TfLiteModel:
+    ) -> Type[ModelBase]:
         interpreter, weight_bits, activation_bits = utils.tfhub_to_tflite_converter(
             link=link, 
             model_name=model_name, 
@@ -389,7 +389,7 @@ class TfLiteModel(ModelBase):
         )
         metadata['weight bits'] = weight_bits
         metadata['activation bits'] = activation_bits
-        return TfLiteModel(interpreter, activation_bits)
+        return TfLiteModel(interpreter, metadata)
 
 class PyTorchModel(ModelBase):
 

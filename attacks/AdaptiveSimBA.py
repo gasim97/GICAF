@@ -96,7 +96,7 @@ class AdaptiveSimBA(AttackBase):
             else:
                 if uniform(0, 100, 1) < count:
                     if self.epsilon == self.initial_epsilon:
-                        self.epsilon = 1.2*self.epsilon
+                        self.epsilon = self.epsilon + 2*(self.bounds[1] - self.bounds[0])*self.size/255
                         count = 0
                     elif len(past_qs) > 0:
                         last_q, past_qs = past_qs[-1], past_qs[:-1]
@@ -206,7 +206,7 @@ class AdaptiveSimBA(AttackBase):
         return q
 
     def adjust_preds(self, preds):
-        probs = list(map(lambda x: x[1] + uniform(low=-0.01, high=0.01, size=1), preds))
+        probs = list(map(lambda x: x[1] + uniform(low=-0.000005, high=0.000005, size=1), preds))
         preds = list(map(lambda x: x[0], preds))
         return array(list(map(lambda x: array(x), zip(preds, probs))))
 
