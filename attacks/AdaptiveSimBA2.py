@@ -8,16 +8,18 @@ from numpy.linalg import norm
 from numpy.random import randint, uniform
 import time
 
-class AdaptiveSimBA(AttackBase):
+class AdaptiveSimBA2(AttackBase):
 
     def __init__(
         self, 
         size: int = 1, 
         epsilon: int = 64, 
+        epsilon_multiplier: int = 2
     ) -> None: 
         self.size = size
-        self.epsilon = epsilon
+        self.epsilon = epsilon*epsilon_multiplier
         self.initial_epsilon = epsilon
+        self.epsilon_multiplier = epsilon_multiplier
 
     def __call__(self, 
         image: ndarray, 
@@ -55,14 +57,12 @@ class AdaptiveSimBA(AttackBase):
         self.num_directions = 1
         self.total_calls = 0
         delta = 0
+        is_adv = self.is_adversarial(top_1_label, loss_label)
         iteration = 0
         done = []
         
-        delta = zeros((self.height, self.width, self.channels))
-        delta = array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: k + uniform(-self.epsilon, self.epsilon, 1), j))), i))), delta)))
         # log step 0
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
-        is_adv = self.is_adversarial(top_1_label, loss_label)
 
         self.logger.append({
             "iterations": iteration,
@@ -91,16 +91,15 @@ class AdaptiveSimBA(AttackBase):
 
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
 
+            if self.model.get_query_count() % 250 < 2 and self.model.get_query_count < 1002:
+                self.epsilon = self.epsilon - self.initial_epsilon*(self.epsilon_multiplier - 1)/4
+
             if success:
                 count = 0
                 past_qs.append(q)
-                self.epsilon = self.initial_epsilon
             else:
                 if uniform(0, 100, 1) < count:
-                    if self.epsilon == self.initial_epsilon:
-                        self.epsilon = self.epsilon + 2*(self.bounds[1] - self.bounds[0])*self.size/255
-                        count = 0
-                    elif len(past_qs) > 0:
+                    if len(past_qs) > 0:
                         last_q, past_qs = past_qs[-1], past_qs[:-1]
                         delta = delta + self.epsilon * last_q
                         self.ps = self.ps[:-1]
