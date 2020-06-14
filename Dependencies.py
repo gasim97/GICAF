@@ -3,6 +3,9 @@ from sys import executable
 
 requirements = [
     "git+https://github.com/Xilinx/brevitas.git",
+    "numpy",
+    "pandas",
+    "scikit-image",
     "opencv-python",
     "tensorflow",
     "tensorflow_hub>=0.6.0",
