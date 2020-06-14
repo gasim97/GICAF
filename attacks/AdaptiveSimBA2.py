@@ -94,7 +94,7 @@ class AdaptiveSimBA2(AttackBase):
 
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
             
-            if self.model.get_query_count() % 200 < 2 and self.model.get_query_count() < 802 and self.last_epsilon_change - self.model.get_query_count() > 198:
+            if self.model.get_query_count() % 200 < 2 and self.model.get_query_count() < 802 and self.model.get_query_count() - self.last_epsilon_change > 198:
                 self.epsilon = self.epsilon - self.initial_epsilon*(self.epsilon_multiplier - 1)/4
                 self.last_epsilon_change = self.model.get_query_count()
 
