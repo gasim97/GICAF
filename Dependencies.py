@@ -14,7 +14,7 @@ requirements = [
     "PyDrive",
     "httplib2==0.15.0",
     "google-api-python-client==1.7.11",
-    "google-colab",
+    "google-colab"
 ]
 
 def install() -> None:
