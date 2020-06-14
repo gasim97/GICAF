@@ -43,8 +43,8 @@ class MetricCollectorBase(ABC):
             NameError if an invalid metric name is provided
         Note
         ----
-            This method must create the following variables:
-                self.metadata = metadata
+            This method must create the following instance variable:
+                self.model = model
         """
         ...
 
