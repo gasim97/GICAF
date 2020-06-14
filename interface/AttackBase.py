@@ -20,7 +20,7 @@ class AttackBase(ABC):
         Parameters
         ----------
             Named parameters are to be defined by sub-classes, where needed. Furthermore,
-            sub-classes should have and use default paramters where the user does not specify
+            sub-classes should have and use default values where the user does not specify
             a parameter
         """
         ...

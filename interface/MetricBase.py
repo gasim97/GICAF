@@ -1,7 +1,7 @@
 from typing import Mapping, Union, Tuple
 from abc import ABC, abstractmethod
 from numpy import ndarray
-
+# Note: subclasses must be added to the metric_list in MetricCollector.py
 class MetricBase(ABC):
 
     @classmethod

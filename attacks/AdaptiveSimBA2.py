@@ -41,6 +41,7 @@ class AdaptiveSimBA2(AttackBase):
         self.query_limit = query_limit
         loss_label = ground_truth
         self.epsilon = self.initial_epsilon*self.epsilon_multiplier
+        self.last_epsilon_change = 0
 
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
 
@@ -92,20 +93,21 @@ class AdaptiveSimBA2(AttackBase):
                 self.count +=1
 
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
-
-            if self.model.get_query_count() % 200 < 2 and self.model.get_query_count() < 802:
+            
+            if self.model.get_query_count() % 200 < 2 and self.model.get_query_count() < 802 and self.last_epsilon_change - self.model.get_query_count() > 198:
                 self.epsilon = self.epsilon - self.initial_epsilon*(self.epsilon_multiplier - 1)/4
+                self.last_epsilon_change = self.model.get_query_count()
 
             if success:
                 self.count = 0
                 past_qs.append(q)
-            # else:
-            #     if uniform(0, 100, 1) < self.count:
-            #         if len(past_qs) > 0:
-            #             last_q, past_qs = past_qs[-1], past_qs[:-1]
-            #             delta = delta + self.epsilon * last_q
-            #             self.ps = self.ps[:-1]
-            #             self.count = 0
+            else:
+                if uniform(0, 100, 1) < self.count:
+                    if len(past_qs) > 0:
+                        last_q, past_qs = past_qs[-1], past_qs[:-1]
+                        delta = delta + self.epsilon * last_q
+                        self.ps = self.ps[:-1]
+                        self.count = 0
 
             if iteration % 100 == 0: # only save image and probs every 100 steps, to save memory space
                 image_save = adv
@@ -161,7 +163,7 @@ class AdaptiveSimBA2(AttackBase):
             p_test = noisy_top_5_preds[idx][1]
         else:
             p_test = top_5_preds[idx][1]
-        if p_test < self.ps[-1] or idx != 0 or uniform(0, 100, 1) < self.count:
+        if p_test < self.ps[-1] or idx != 0:
             delta = delta + self.epsilon*q # add new perturbation to total perturbation
             self.ps.append(p_test) # update new p
             success = True
@@ -186,7 +188,7 @@ class AdaptiveSimBA2(AttackBase):
             p_test = noisy_top_5_preds[idx][1]
         else:
             p_test = top_5_preds[idx][1]
-        if p_test < self.ps[-1] or idx != 0 or uniform(0, 100, 1) < self.count:
+        if p_test < self.ps[-1] or idx != 0:
             delta = delta - self.epsilon*q # add new perturbation to total perturbation
             self.ps.append(p_test) # update new p 
             success = True
