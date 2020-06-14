@@ -40,7 +40,7 @@ class AdaptiveSimBA2(AttackBase):
         self.logger = logger
         self.query_limit = query_limit
         loss_label = ground_truth
-        self.epsilon = self.epsilon*self.epsilon_multiplier
+        self.epsilon = self.initial_epsilon*self.epsilon_multiplier
 
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
 
