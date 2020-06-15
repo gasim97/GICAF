@@ -53,7 +53,6 @@ class SparseSimBA(AttackBase):
         top_1_label, p = top_preds[0]
         self.logger.nl(['iterations', 'epsilon','size', 
                         'is_adv', 'image', 'top_preds'])
-        total_calls = 0
         delta = 0
         is_adv = self.is_adversarial(top_1_label, loss_label)
         iteration = 0
@@ -77,10 +76,8 @@ class SparseSimBA(AttackBase):
             q, done = self.new_q_direction(done)
 
             delta, p, top_preds, success = self.check_pos(image, delta, q, p, loss_label)
-            total_calls += 1
             if not success:
                 delta, p, top_preds, _ = self.check_neg(image, delta, q, p, loss_label)
-                total_calls += 1
 
             #update data on df
             adv = clip(image + delta, self.bounds[0], self.bounds[1])

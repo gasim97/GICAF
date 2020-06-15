@@ -1,5 +1,5 @@
 from typing import Optional, Type
-from gicaf.interface.AttackBase import AttackBase
+from gicaf.attacks.SparseSimBA import SparseSimBA
 from gicaf.interface.ModelBase import ModelBase
 from gicaf.interface.LoggerBase import LoggerBase
 from numpy import clip, argwhere, zeros, array, ndarray
@@ -8,16 +8,23 @@ from numpy.linalg import norm
 from numpy.random import randint, uniform
 import time
 
-class AdaptiveSimBA(AttackBase):
+class AdaptiveSimBA(SparseSimBA):
 
     def __init__(
         self, 
         size: int = 1, 
         epsilon: int = 64, 
+        epsilon_multiplier: int = 2,
+        decay_rate: float = 0.25,
+        decay_period: int = 200,
+        probability_rate: float = 0.01
     ) -> None: 
         self.size = size
-        self.epsilon = epsilon
         self.initial_epsilon = epsilon
+        self.epsilon_multiplier = epsilon_multiplier
+        self.decay_rate = decay_rate
+        self.decay_period = decay_period
+        self.probability_rate = probability_rate
 
     def __call__(self, 
         image: ndarray, 
@@ -39,30 +46,29 @@ class AdaptiveSimBA(AttackBase):
         self.logger = logger
         self.query_limit = query_limit
         loss_label = ground_truth
+        self.epsilon = self.initial_epsilon*self.epsilon_multiplier
+        self.last_epsilon_change = 0
 
         setrecursionlimit(max(1000, int(self.height*self.width*self.channels/self.size/self.size*10))) #for deep recursion diretion sampling
 
         top_preds = self.model.get_top_5(image)
-        top_1_label, p = top_preds[0]
+        noisy_top_5_preds = self.adjust_preds(top_preds)
+        top_1_label, _ = top_preds[0]
 
         self.logger.nl(['iterations', 'epsilon','size', 
-                        'is_adv', 'image', 'top_preds', 'success'])
+                        'is_adv', 'image', 'top_preds', 'success', 'p'])
 
-        self.ps = [p]
-        count = 0
+        self.ps = [noisy_top_5_preds[0][1]]
+        self.count = 0
         past_qs = []
         self.done = []
-        self.num_directions = 1
-        self.total_calls = 0
         delta = 0
+        is_adv = self.is_adversarial(top_1_label, loss_label)
         iteration = 0
         done = []
         
-        delta = zeros((self.height, self.width, self.channels))
-        delta = array(list(map(lambda i: array(list(map(lambda j: array(list(map(lambda k: k + uniform(-self.epsilon, self.epsilon, 1), j))), i))), delta)))
         # log step 0
         adv = clip(image + delta, self.bounds[0], self.bounds[1])
-        is_adv = self.is_adversarial(top_1_label, loss_label)
 
         self.logger.append({
             "iterations": iteration,
@@ -72,6 +78,7 @@ class AdaptiveSimBA(AttackBase):
             "image": image,
             "top_preds": top_preds,
             "success": False,
+            "p": self.ps[-1],
         }, image, adv)
 
         while ((not is_adv) & (self.model.get_query_count() <= self.query_limit)): 
@@ -79,32 +86,32 @@ class AdaptiveSimBA(AttackBase):
 
             q, done = self.new_q_direction(done)
 
-            delta, p, top_preds, success = self.check_pos(image, delta, q, p, loss_label)
+            delta, top_preds, success = self.check_pos(image, delta, q, loss_label)
             if success:
                 q = -q
-            self.total_calls += 1
-            count +=1
+            self.count += self.probability_rate*100
             if not success:
-                delta, p, top_preds, success = self.check_neg(image, delta, q, p, loss_label)
-                self.total_calls += 1
-                count +=1
+                delta, top_preds, success = self.check_neg(image, delta, q, loss_label)
+                self.count += self.probability_rate*100
 
             adv = clip(image + delta, self.bounds[0], self.bounds[1])
+            
+            if (self.model.get_query_count() % self.decay_period < 2 
+                and self.epsilon != self.initial_epsilon 
+                and self.model.get_query_count() - self.last_epsilon_change > self.decay_period - 2):
+                self.epsilon = self.epsilon - self.initial_epsilon*(self.epsilon_multiplier - 1)/(1/self.decay_rate)
+                self.last_epsilon_change = self.model.get_query_count()
 
             if success:
-                count = 0
+                self.count = 0
                 past_qs.append(q)
-                self.epsilon = self.initial_epsilon
             else:
-                if uniform(0, 100, 1) < count:
-                    if self.epsilon == self.initial_epsilon:
-                        self.epsilon = self.epsilon + 2*(self.bounds[1] - self.bounds[0])*self.size/255
-                        count = 0
-                    elif len(past_qs) > 0:
+                if uniform(0, 100, 1) < self.count:
+                    if len(past_qs) > 0:
                         last_q, past_qs = past_qs[-1], past_qs[:-1]
                         delta = delta + self.epsilon * last_q
                         self.ps = self.ps[:-1]
-                        count = 0
+                        self.count = 0
 
             if iteration % 100 == 0: # only save image and probs every 100 steps, to save memory space
                 image_save = adv
@@ -121,6 +128,7 @@ class AdaptiveSimBA(AttackBase):
                 "image": image_save,
                 "top_preds": preds_save,
                 "success": success,
+                "p": self.ps[-1],
             }, image, adv)
 
             # check if image is now adversarial
@@ -134,12 +142,13 @@ class AdaptiveSimBA(AttackBase):
                     "image": adv,
                     "top_preds": top_preds,
                     "success": success,
+                    "p": self.ps[-1],
                 }, image, adv) 
                 return adv
                 
         return None
 
-    def check_pos(self, x, delta, q, p, loss_label):
+    def check_pos(self, x, delta, q, loss_label):
         success = False 
         pos_x = x + delta + self.epsilon * q
         pos_x = clip(pos_x, self.bounds[0], self.bounds[1])
@@ -152,7 +161,7 @@ class AdaptiveSimBA(AttackBase):
             print("{} does not appear in top_preds".format(loss_label))
             delta = delta - self.epsilon*q # add new perturbation to total perturbation
             success = True
-            return delta, p, top_5_preds, success
+            return delta, top_5_preds, success
         idx = idx[0][0]
         if self.model.metadata['activation bits'] <= 8:
             p_test = noisy_top_5_preds[idx][1]
@@ -162,9 +171,9 @@ class AdaptiveSimBA(AttackBase):
             delta = delta + self.epsilon*q # add new perturbation to total perturbation
             self.ps.append(p_test) # update new p
             success = True
-        return delta, p, top_5_preds, success
+        return delta, top_5_preds, success
 
-    def check_neg(self, x, delta, q, p, loss_label):
+    def check_neg(self, x, delta, q, loss_label):
         success = False
         neg_x = x + delta - self.epsilon * q
         neg_x = clip(neg_x, self.bounds[0], self.bounds[1])
@@ -177,7 +186,7 @@ class AdaptiveSimBA(AttackBase):
             print("{} does not appear in top_preds".format(loss_label))
             delta = delta - self.epsilon*q # add new perturbation to total perturbation
             success = True
-            return delta, p, top_5_preds, success
+            return delta, top_5_preds, success
         idx = idx[0][0]
         if self.model.metadata['activation bits'] <= 8:
             p_test = noisy_top_5_preds[idx][1]
@@ -187,45 +196,9 @@ class AdaptiveSimBA(AttackBase):
             delta = delta - self.epsilon*q # add new perturbation to total perturbation
             self.ps.append(p_test) # update new p 
             success = True
-        return delta, p, top_5_preds, success
-
-    def is_adversarial(self, top_1_label, original_label):
-        return top_1_label != original_label
-
-    def new_q_direction(self, done):
-        q_indicies = self.sample_nums(done)
-        q = zeros((self.height, self.width, self.channels))
-        for [a, b, c] in q_indicies:
-            q = q + self.q_direction(a, b, c)
-        return q, done
-
-    def q_direction(self, a, b, c):
-        q = zeros((self.height, self.width, self.channels))
-        for i in range(self.size):
-            for j in range(self.size):
-                q[a*self.size+i, b*self.size+j, c] = 1
-        q = q/norm(q)
-        return q
+        return delta, top_5_preds, success
 
     def adjust_preds(self, preds):
-        probs = list(map(lambda x: x[1] + uniform(low=-0.000005, high=0.000005, size=1), preds))
+        probs = list(map(lambda x: x[1] + uniform(low=-0.000005, high=0.000005, size=1)[0], preds))
         preds = list(map(lambda x: x[0], preds))
         return array(list(map(lambda x: array(x), zip(preds, probs))))
-
-    def sample_nums(self, done):
-        # samples new pixels without replacement
-        indicies = []
-        for _ in range(self.num_directions):
-            [a, b, c] = self.sample_nums_rec()
-            self.done.append([a, b, c])
-            indicies.append([a, b, c])
-            if len(self.done) >= self.height*self.width*self.channels/self.size/self.size-2:
-                self.done = [] #empty it before it hits recursion limit
-        return indicies
-
-    def sample_nums_rec(self):
-        [a,b] = randint(0, high=self.height/self.size, size=2)
-        c = randint(0, high=self.channels, size=1)[0]
-        if [a,b,c] in self.done:
-            [a,b,c] = self.sample_nums_rec()
-        return [a,b,c]
