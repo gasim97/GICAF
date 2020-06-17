@@ -32,7 +32,7 @@ class LoadData(LoadDataBase):
         index_ranges: List[Tuple[int, int]]
     ) -> List[Tuple[str, int]]:
         info("Reading dataset text file (file path = '" + self.ground_truth_file_path + "')...")
-        sorted_indicies = LoadDataBase.get_sorted_indicies_list(index_ranges)
+        sorted_indicies = LoadDataBase.get_sorted_indices_list(index_ranges)
         txt_file = open(self.ground_truth_file_path, "r")
 
         data = [] # initialize, will store [[image file name, ground truth]]
@@ -129,6 +129,6 @@ class LoadData(LoadDataBase):
         with open(str(self._save_file(name)), "rb") as fn: 
             self.loaded_data = load(fn)
         if index_ranges:
-            sorted_indicies = LoadDataBase.get_sorted_indicies_list(index_ranges)
+            sorted_indicies = LoadDataBase.get_sorted_indices_list(index_ranges)
             self.loaded_data = list(map(lambda x: x[1], filter(lambda x: x[0] in sorted_indicies, enumerate(self.loaded_data))))
         return self._load

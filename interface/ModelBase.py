@@ -24,7 +24,7 @@ class ModelBase(ABC):
     def version(cls) -> str: return "1.0"
 
     @classmethod
-    def zip_indicies_to_preds(
+    def zip_indices_to_preds(
         cls, 
         preds: Union[List, ndarray]
     ) -> ndarray:
@@ -305,7 +305,7 @@ class KerasModel(ModelBase):
     ) -> ndarray:
         preds = self.model.predict(image)
         self.increment_query_count(1)
-        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
+        return ModelBase.zip_indices_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
     def get_preds_batch(
         self, 
@@ -314,7 +314,7 @@ class KerasModel(ModelBase):
         preds = self.model.predict(images)
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda x: ModelBase.zip_indicies_to_preds(x), 
+            lambda x: ModelBase.zip_indices_to_preds(x), 
             preds if not self.metadata['apply softmax'] else map(lambda x: softmax(x), preds))))
 
 class TfLiteModel(ModelBase):
@@ -345,7 +345,7 @@ class TfLiteModel(ModelBase):
     ) -> ndarray:
         preds = self._evaluate(image)
         self.increment_query_count(1)
-        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
+        return ModelBase.zip_indices_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
     def get_preds_batch(
         self, 
@@ -353,7 +353,7 @@ class TfLiteModel(ModelBase):
     ) -> ndarray: 
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda img: ModelBase.zip_indicies_to_preds(self._evaluate(img) if not self.metadata['apply softmax'] else softmax(self._evaluate(img))), 
+            lambda img: ModelBase.zip_indices_to_preds(self._evaluate(img) if not self.metadata['apply softmax'] else softmax(self._evaluate(img))), 
             images)))
 
     @classmethod
@@ -407,7 +407,7 @@ class PyTorchModel(ModelBase):
     ) -> ndarray:
         preds = self.model([image]).detach().numpy()[0]
         self.increment_query_count(1)
-        return ModelBase.zip_indicies_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
+        return ModelBase.zip_indices_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
     def get_preds_batch(
         self, 
@@ -416,5 +416,5 @@ class PyTorchModel(ModelBase):
         preds = self.model(images).detach().numpy()
         self.increment_query_count(len(images))
         return array(list(map(
-            lambda x: ModelBase.zip_indicies_to_preds(x), 
+            lambda x: ModelBase.zip_indices_to_preds(x), 
             preds if not self.metadata['apply softmax'] else map(lambda x: softmax(x), preds))))

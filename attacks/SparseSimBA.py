@@ -12,7 +12,6 @@ from numpy import clip, argwhere, zeros, ndarray
 from sys import setrecursionlimit
 from numpy.linalg import norm
 from numpy.random import randint
-import time
 
 class SparseSimBA(AttackBase):
 

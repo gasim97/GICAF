@@ -8,7 +8,7 @@ class LoadDataBase(ABC):
     def version(cls) -> str: return "1.0"
 
     @classmethod
-    def get_sorted_indicies_list(
+    def get_sorted_indices_list(
         cls, 
         index_ranges: List[Tuple[int, int]]
     ) -> List[int]:

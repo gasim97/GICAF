@@ -13,6 +13,7 @@ metric_list = {
     "infinity norm": PNorm.InfNorm,
     "psnr": PSNR.PSNR,
     "ssim": SSIM.SSIM,
+    "pass": SSIM.PASS,
     "wadiqam-fr": WaDIQaM.WaDIQaMFR,
 }
 

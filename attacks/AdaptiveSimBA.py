@@ -6,7 +6,6 @@ from numpy import clip, argwhere, zeros, array, ndarray
 from sys import setrecursionlimit
 from numpy.linalg import norm
 from numpy.random import randint, uniform
-import time
 
 class AdaptiveSimBA(SparseSimBA):
 
@@ -14,7 +13,7 @@ class AdaptiveSimBA(SparseSimBA):
         self, 
         size: int = 1, 
         epsilon: int = 64, 
-        epsilon_multiplier: int = 2,
+        epsilon_multiplier: float = 2.0,
         decay_rate: float = 0.25,
         decay_period: int = 200,
         probability_rate: float = 0.01
