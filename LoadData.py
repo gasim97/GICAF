@@ -87,7 +87,6 @@ class LoadData(LoadDataBase):
         bounds: Tuple[int, int] = (0, 1), 
         dtype=float32
     ) -> ndarray:
-        info("Preprocessing image bounds.")
         divisor = 255/(bounds[1] - bounds[0])
         return array(list(map(
             lambda i: array(list(map(lambda j: asarray(list(map(lambda k: k/divisor + bounds[0], j)), dtype=dtype), i))), 
