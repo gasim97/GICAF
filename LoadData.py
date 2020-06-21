@@ -111,7 +111,7 @@ class LoadData(LoadDataBase):
         name: str
     ) -> None:
         data = []
-        for sample in data_generator:
+        for sample in data_generator():
             data.append(sample)
         with open(str(self._save_file(name)), "wb") as fn: 
             dump(data, fn)
