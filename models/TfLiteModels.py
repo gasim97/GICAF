@@ -1,5 +1,4 @@
 from gicaf.interface.ModelBase import TfLiteModel
-import gicaf.Utils as utils
 
 def ResNet50(bit_width: int = 32) -> TfLiteModel: 
     return TfLiteModel.from_tensorflowhub(
