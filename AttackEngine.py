@@ -60,9 +60,8 @@ class AttackEngine(AttackEngineBase):
             num_success = 0
             for i, (x, y) in enumerate(self.data_generator()):
                 if not self.false_positive or i in self.pred_result_indicies['correct']:
-                    if use_memory:
-                        if str(y) in memory:
-                            x = x + memory[str(y)]
+                    if use_memory and str(y) in memory:
+                        x = x + memory[str(y)]
                     self.model.reset_query_count()
                     adv = attack(
                         image=x, 
