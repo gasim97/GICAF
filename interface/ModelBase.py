@@ -1,8 +1,9 @@
-from typing import List, Union, Any, Mapping, Union, Tuple, Type
+from typing import List, Union, Any, Mapping, Union, Tuple, Type, Callable
 from abc import ABC, abstractmethod
 import gicaf.Utils as utils
+from gicaf.interface.LoadDataBase import LoadDataBase
 from tensorflow.lite.python.interpreter import Interpreter
-from numpy import array, arange, flip, expand_dims, float32, ndarray
+from numpy import array, arange, flip, expand_dims, float32, ndarray, int8
 from scipy.special import softmax
 from copy import deepcopy
 
@@ -303,7 +304,8 @@ class KerasModel(ModelBase):
         self, 
         image: ndarray
     ) -> ndarray:
-        preds = self.model.predict(image)
+        img = expand_dims(image, axis=0).astype(float32)
+        preds = self.model.predict(img)[0]
         self.increment_query_count(1)
         return ModelBase.zip_indices_to_preds(preds if not self.metadata['apply softmax'] else softmax(preds))
 
@@ -333,7 +335,8 @@ class TfLiteModel(ModelBase):
         self, 
         image: ndarray
     ) -> List:
-        img = expand_dims(image, axis=0).astype(float32)
+        astype = int8 if self.metadata["weight bits"] == 8 else float32
+        img = expand_dims(image, axis=0).astype(astype)
         self.model.set_tensor(self.input_index, img)
         self.model.invoke()
         output = self.model.tensor(self.output_index)
@@ -362,11 +365,14 @@ class TfLiteModel(ModelBase):
         saved_model_path: str,
         model_name: str,
         bit_width: int,
-        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+        loadData: LoadDataBase,
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]],
+        rep_data_index_ranges: List[Tuple[int, int]] = [(0, 50)]
     ) -> Type[ModelBase]:
         interpreter, weight_bits, activation_bits = utils.saved_model_to_tflite(
             saved_model_path=saved_model_path, 
             model_name=model_name, 
+            representative_dataset=loadData.get_images(rep_data_index_ranges, metadata),
             bit_width=bit_width
         )
         metadata['weight bits'] = weight_bits
@@ -379,11 +385,14 @@ class TfLiteModel(ModelBase):
         link: str,
         model_name: str,
         bit_width: int,
-        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+        loadData: LoadDataBase,
+        metadata: Mapping[str, Union[int, bool, Tuple[int, int]]],
+        rep_data_index_ranges: List[Tuple[int, int]] = [(0, 50)]
     ) -> Type[ModelBase]:
         interpreter, weight_bits, activation_bits = utils.tfhub_to_tflite_converter(
             link=link, 
             model_name=model_name, 
+            representative_dataset=loadData.get_images(rep_data_index_ranges, metadata),
             input_dims=[None, metadata['height'], metadata['width'], metadata['channels']],
             bit_width=bit_width
         )

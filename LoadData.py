@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Callable, List, Mapping, Union
 from gicaf.interface.LoadDataBase import LoadDataBase
-from numpy import array, arange, asarray, float32, ndarray
+from numpy import array, expand_dims, asarray, float32, ndarray
 from cv2 import cvtColor, COLOR_RGB2BGR
 from logging import info
 from keras.preprocessing.image import load_img
@@ -80,6 +80,34 @@ class LoadData(LoadDataBase):
         self.model_metadata = model_metadata
         self.images_metadata = self.read_txt_file(index_ranges) # get image file names and ground truths
         return self._get_data
+
+    def _get_image(self) -> ndarray:
+        for image in self.images_metadata:
+            x = asarray(load_img(
+                self.img_folder_path + image[0], 
+                target_size=(
+                    self.model_metadata['height'], 
+                    self.model_metadata['width']
+                ),
+                color_mode='rgb'
+            ))
+            if (self.model_metadata['bgr']):
+                x = asarray(cvtColor(x, COLOR_RGB2BGR))
+            if (self.model_metadata['bounds'] != (0, 255)):
+                x = self.preprocessing(
+                    x, 
+                    self.model_metadata['bounds']
+                )
+            yield [expand_dims(x, axis=0).astype(float32)]
+
+    def get_images(
+        self, 
+        index_ranges: List[Tuple[int, int]], 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> Callable[[None], ndarray]:
+        self.model_metadata = model_metadata
+        self.images_metadata = self.read_txt_file(index_ranges) # get image file names and ground truths
+        return self._get_image
 
     def preprocessing(
         self, 

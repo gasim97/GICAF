@@ -1,6 +1,5 @@
 from gicaf.interface.ModelBase import KerasModel
-import keras
-from numpy import array
+from tensorflow import keras
 
 def ResNet50() -> KerasModel:
     keras.backend.set_learning_phase(0)

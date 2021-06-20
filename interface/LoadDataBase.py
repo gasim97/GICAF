@@ -94,6 +94,33 @@ class LoadDataBase(ABC):
         ...
 
     @abstractmethod
+    def get_images(
+        self, 
+        index_ranges: List[Tuple[int, int]], 
+        model_metadata: Mapping[str, Union[int, bool, Tuple[int, int]]]
+    ) -> Callable[[None], Tuple[ndarray, int]]: 
+        """
+        Get images
+
+        Parameters
+        ----------
+            index_ranges : list of 2-tuples with elements of type int
+                Specifies the indicies of the data to load, each tuple contains 
+                (start index, end index) both inclusive
+            model_metadata : dict
+                Model metadata dictionary populated as specified in ModelBase.py
+        Returns
+        -------
+            data_generator : generator function
+                Yields
+                ------
+                    image : numpy.ndarray
+                        Loaded image in the correct format, i.e. preprocessing for model input
+                        size and value bounds
+        """
+        ...
+
+    @abstractmethod
     def save(
         self, 
         data_generator: Callable[[None], Tuple[ndarray, int]], 
